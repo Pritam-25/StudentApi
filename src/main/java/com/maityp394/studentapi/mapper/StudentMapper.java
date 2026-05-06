@@ -1,10 +1,9 @@
 package com.maityp394.studentapi.mapper;
 
-import org.springframework.stereotype.Component;
-
 import com.maityp394.studentapi.dto.request.CreateStudentRequest;
 import com.maityp394.studentapi.dto.response.StudentResponse;
 import com.maityp394.studentapi.entity.Student;
+import org.springframework.stereotype.Component;
 
 @Component
 public class StudentMapper {
@@ -20,6 +19,7 @@ public class StudentMapper {
         return new StudentResponse(
                 student.getId(),
                 student.getName(),
-                student.getEmail());
+                student.getEmail()
+        );
     }
 }

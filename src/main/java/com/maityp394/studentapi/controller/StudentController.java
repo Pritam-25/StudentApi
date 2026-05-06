@@ -1,27 +1,20 @@
 package com.maityp394.studentapi.controller;
 
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.util.UriComponentsBuilder;
-
 import com.maityp394.studentapi.dto.request.CreateStudentRequest;
+import com.maityp394.studentapi.dto.request.PatchStudentRequest;
+import com.maityp394.studentapi.dto.request.UpdateStudentRequest;
 import com.maityp394.studentapi.dto.response.ApiResponse;
 import com.maityp394.studentapi.dto.response.StudentResponse;
 import com.maityp394.studentapi.service.StudentService;
-
 import jakarta.validation.Valid;
-
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 
 @RestController
 @RequestMapping("/api/v1/students")
@@ -58,6 +51,32 @@ public class StudentController {
     public ResponseEntity<ApiResponse<StudentResponse>> getStudentById(@PathVariable String id) {
         return ResponseEntity
                 .ok(new ApiResponse<>(true, "Student fetched successfully", studentService.getStudentById(id)));
+    }
+
+    // PUT - Full Update
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<StudentResponse>> updateStudent(
+            @PathVariable String id,
+            @Valid @RequestBody UpdateStudentRequest request) {
+
+        StudentResponse updatedStudent = studentService.updateStudent(id, request);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Student updated successfully", updatedStudent)
+        );
+    }
+
+    // PATCH - Partial Update
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<StudentResponse>> patchStudent(
+            @PathVariable String id,
+            @RequestBody PatchStudentRequest request) {
+
+        StudentResponse updatedStudent = studentService.patchStudent(id, request);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Student partially updated", updatedStudent)
+        );
     }
 
     // DELETE student by ID
