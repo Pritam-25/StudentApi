@@ -1,15 +1,14 @@
-package com.maityp394.REST_API.controller;
+package com.maityp394.studentapi.controller;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.maityp394.REST_API.dto.request.CreateStudentRequest;
-import com.maityp394.REST_API.dto.response.ApiResponse;
-import com.maityp394.REST_API.dto.response.StudentResponse;
-import com.maityp394.REST_API.service.StudentService;
+import com.maityp394.studentapi.dto.request.CreateStudentRequest;
+import com.maityp394.studentapi.dto.response.ApiResponse;
+import com.maityp394.studentapi.dto.response.StudentResponse;
+import com.maityp394.studentapi.service.StudentService;
 
 import jakarta.validation.Valid;
 
@@ -50,16 +49,15 @@ public class StudentController {
     public ResponseEntity<ApiResponse<List<StudentResponse>>> getStudents(
             @PageableDefault(size = 5, sort = "name") Pageable pageable) {
 
-        Page<StudentResponse> studentPage = studentService.getAllStudents(pageable);
-        return ResponseEntity.ok(
-                new ApiResponse<>(true, "Students fetched successfully", studentPage.getContent()));
+        List<StudentResponse> students = studentService.getAllStudents(pageable);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Students fetched successfully", students));
     }
 
     // GET student by ID
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<StudentResponse>> getStudentById(@PathVariable String id) {
-        return ResponseEntity.ok(
-                new ApiResponse<>(true, "Student fetched successfully", studentService.getStudentById(id)));
+        return ResponseEntity
+                .ok(new ApiResponse<>(true, "Student fetched successfully", studentService.getStudentById(id)));
     }
 
     // DELETE student by ID

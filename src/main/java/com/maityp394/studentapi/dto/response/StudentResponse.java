@@ -1,4 +1,4 @@
-package com.maityp394.REST_API.dto.response;
+package com.maityp394.studentapi.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

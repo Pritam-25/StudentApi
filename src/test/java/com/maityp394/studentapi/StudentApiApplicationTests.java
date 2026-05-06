@@ -1,4 +1,4 @@
-package com.maityp394.REST_API;
+package com.maityp394.studentapi;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,11 +14,11 @@ import org.springframework.http.ResponseEntity;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import com.maityp394.REST_API.dto.request.CreateStudentRequest;
+import com.maityp394.studentapi.dto.request.CreateStudentRequest;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
-class RestApiApplicationTests {
+class StudentApiApplicationTests {
 
 	@Autowired
 	TestRestTemplate testRestTemplate;

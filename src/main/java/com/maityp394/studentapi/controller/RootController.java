@@ -1,4 +1,4 @@
-package com.maityp394.REST_API.controller;
+package com.maityp394.studentapi.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;

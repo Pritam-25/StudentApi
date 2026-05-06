@@ -1,4 +1,4 @@
-package com.maityp394.REST_API.entity;
+package com.maityp394.studentapi.entity;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

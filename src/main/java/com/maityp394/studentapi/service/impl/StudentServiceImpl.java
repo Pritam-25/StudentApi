@@ -1,15 +1,20 @@
-package com.maityp394.REST_API.service.impl;
+package com.maityp394.studentapi.service.impl;
+
+import java.util.List;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import com.maityp394.REST_API.dto.request.CreateStudentRequest;
-import com.maityp394.REST_API.dto.response.StudentResponse;
-import com.maityp394.REST_API.entity.Student;
-import com.maityp394.REST_API.exception.ResourceNotFoundException;
-import com.maityp394.REST_API.mapper.StudentMapper;
-import com.maityp394.REST_API.repository.StudentRepository;
-import com.maityp394.REST_API.service.StudentService;
+
+import com.maityp394.studentapi.dto.request.CreateStudentRequest;
+import com.maityp394.studentapi.dto.response.StudentResponse;
+import com.maityp394.studentapi.entity.Student;
+import com.maityp394.studentapi.exception.ResourceNotFoundException;
+import com.maityp394.studentapi.mapper.StudentMapper;
+import com.maityp394.studentapi.repository.StudentRepository;
+import com.maityp394.studentapi.service.StudentService;
 
 @Service
 // @RequiredArgsConstructor -> generate constructor by default
@@ -38,9 +43,14 @@ public class StudentServiceImpl implements StudentService {
     }
 
     @Override
-    public Page<StudentResponse> getAllStudents(Pageable pagable) {
-        return studentRepository.findAll(pagable)
-                .map(studentMapper::tResponse);
+    public List<StudentResponse> getAllStudents(Pageable pageable) {
+        Page<Student> page = studentRepository.findAll(
+                PageRequest.of(
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        pageable.getSortOr(Sort.by(Sort.Direction.DESC, "name"))));
+
+        return page.map(studentMapper::tResponse).getContent();
     }
 
     @Override

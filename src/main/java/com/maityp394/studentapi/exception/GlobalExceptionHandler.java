@@ -1,4 +1,4 @@
-package com.maityp394.REST_API.exception;
+package com.maityp394.studentapi.exception;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -9,7 +9,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.maityp394.REST_API.dto.response.ApiResponse;
+import com.maityp394.studentapi.dto.response.ApiResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

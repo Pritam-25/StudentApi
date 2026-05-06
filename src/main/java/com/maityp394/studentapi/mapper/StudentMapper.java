@@ -1,9 +1,10 @@
-package com.maityp394.REST_API.mapper;
+package com.maityp394.studentapi.mapper;
 
 import org.springframework.stereotype.Component;
-import com.maityp394.REST_API.dto.request.CreateStudentRequest;
-import com.maityp394.REST_API.dto.response.StudentResponse;
-import com.maityp394.REST_API.entity.Student;
+
+import com.maityp394.studentapi.dto.request.CreateStudentRequest;
+import com.maityp394.studentapi.dto.response.StudentResponse;
+import com.maityp394.studentapi.entity.Student;
 
 @Component
 public class StudentMapper {
@@ -17,9 +18,8 @@ public class StudentMapper {
 
     public StudentResponse tResponse(Student student) {
         return new StudentResponse(
-            student.getId(),
-            student.getName(),
-            student.getEmail()
-        );
+                student.getId(),
+                student.getName(),
+                student.getEmail());
     }
 }

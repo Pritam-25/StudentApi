@@ -1,13 +1,13 @@
-package com.maityp394.REST_API;
+package com.maityp394.studentapi;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class RestApiApplication {
+public class StudentApiApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(RestApiApplication.class, args);
+		SpringApplication.run(StudentApiApplication.class, args);
 	}
 
 }
