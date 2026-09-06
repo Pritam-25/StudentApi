@@ -4,20 +4,65 @@ import com.maityp394.studentapi.dto.request.CreateStudentRequest;
 import com.maityp394.studentapi.dto.request.PatchStudentRequest;
 import com.maityp394.studentapi.dto.request.UpdateStudentRequest;
 import com.maityp394.studentapi.dto.response.StudentResponse;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-
+/** Service interface defining business logic operations for managing students. */
 public interface StudentService {
-    StudentResponse createStudent(CreateStudentRequest request);
 
-    StudentResponse getStudentById(String id);
+  /**
+   * Creates a new student record based on the provided request.
+   *
+   * @param request the request containing new student details
+   * @return the newly created {@link StudentResponse}
+   */
+  StudentResponse createStudent(CreateStudentRequest request);
 
-    List<StudentResponse> getAllStudents(Pageable pageable);
+  /**
+   * Retrieves a student by their unique ID.
+   *
+   * @param id the unique ID of the student
+   * @return the {@link StudentResponse} matching the ID
+   * @throws com.maityp394.studentapi.exception.ResourceNotFoundException if no student exists with
+   *     the given ID
+   */
+  StudentResponse getStudentById(UUID id);
 
-    StudentResponse updateStudent(String id, UpdateStudentRequest request);
+  /**
+   * Retrieves a paginated and sorted list of students.
+   *
+   * @param pageable pagination and sorting parameters
+   * @return a list of {@link StudentResponse} items for the requested page
+   */
+  List<StudentResponse> getAllStudents(Pageable pageable);
 
-    StudentResponse patchStudent(String id, PatchStudentRequest request);
+  /**
+   * Fully replaces an existing student's details.
+   *
+   * @param id the unique ID of the student to update
+   * @param request the request containing full updated details
+   * @return the updated {@link StudentResponse}
+   * @throws com.maityp394.studentapi.exception.ResourceNotFoundException if no student exists with
+   *     the given ID
+   */
+  StudentResponse updateStudent(UUID id, UpdateStudentRequest request);
 
-    void deleteStudent(String id);
+  /**
+   * Partially updates an existing student's attributes with non-null values.
+   *
+   * @param id the unique ID of the student to patch
+   * @param request the request containing the partial update attributes
+   * @return the patched {@link StudentResponse}
+   * @throws com.maityp394.studentapi.exception.ResourceNotFoundException if no student exists with
+   *     the given ID
+   */
+  StudentResponse patchStudent(UUID id, PatchStudentRequest request);
+
+  /**
+   * Deletes a student by their unique ID.
+   *
+   * @param id the unique ID of the student to delete
+   */
+  void deleteStudent(UUID id);
 }
