@@ -114,7 +114,7 @@ public class StudentController {
 
     StudentResponse updatedStudent = studentService.patchStudent(id, request);
 
-    return ResponseEntity.ok(new ApiResponse<>("Student partially updated", updatedStudent));
+    return ResponseEntity.ok(new ApiResponse<>("Student updated successfully", updatedStudent));
   }
 
   /**

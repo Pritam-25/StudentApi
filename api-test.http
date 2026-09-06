@@ -1,4 +1,4 @@
-@baseUrl = http://localhost:8000
+@baseUrl = http://localhost:8080
 
 # Default fallback ID (Will be automatically overwritten when Request #3 runs)
 @studentId = {{createStudent.response.body.data.id}}
@@ -16,7 +16,7 @@ Content-Type: application/json
 
 {
   "name": "Alex Johnson",
-  "email": "alex.john676@example.com",
+  "email": "alex.john6080@example.com",
   "password": "SecurePassword123!"
 }
 

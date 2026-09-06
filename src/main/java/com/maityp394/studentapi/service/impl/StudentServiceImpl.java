@@ -45,8 +45,6 @@ public class StudentServiceImpl implements StudentService {
   /** {@inheritDoc} */
   @Override
   public StudentResponse createStudent(CreateStudentRequest request) {
-    log.debug("Creating new student");
-
     if (studentRepository.existsByEmail(request.email())) {
       throw new DuplicateResourceException(
           ErrorCode.STUDENT_EMAIL_ALREADY_EXISTS,
@@ -62,7 +60,6 @@ public class StudentServiceImpl implements StudentService {
   /** {@inheritDoc} */
   @Override
   public StudentResponse getStudentById(UUID id) {
-    log.debug("Fetching student by id: {}", id);
     Student student = findStudentByIdOrThrow(id);
     log.info("Student fetched successfully: id={}", id);
     return studentMapper.toResponse(student);
@@ -71,7 +68,6 @@ public class StudentServiceImpl implements StudentService {
   /** {@inheritDoc} */
   @Override
   public List<StudentResponse> getAllStudents(Pageable pageable) {
-    log.debug("Fetching all students with pageable: {}", pageable);
     Page<Student> page =
         studentRepository.findAll(
             PageRequest.of(
@@ -86,8 +82,6 @@ public class StudentServiceImpl implements StudentService {
   /** {@inheritDoc} */
   @Override
   public StudentResponse updateStudent(UUID id, UpdateStudentRequest request) {
-    log.debug("Updating student with id: {}", id);
-
     Student student = findStudentByIdOrThrow(id);
 
     if (studentRepository.existsByEmailAndIdNot(request.email(), id)) {
@@ -107,8 +101,6 @@ public class StudentServiceImpl implements StudentService {
   /** {@inheritDoc} */
   @Override
   public StudentResponse patchStudent(UUID id, PatchStudentRequest request) {
-    log.debug("Patching student with id: {}", id);
-
     Student student = findStudentByIdOrThrow(id);
 
     if (request.email() != null && studentRepository.existsByEmailAndIdNot(request.email(), id)) {
@@ -134,7 +126,6 @@ public class StudentServiceImpl implements StudentService {
   /** {@inheritDoc} */
   @Override
   public void deleteStudent(UUID id) {
-    log.debug("Deleting student with id: {}", id);
     Student student = findStudentByIdOrThrow(id);
     studentRepository.delete(student);
     log.info("Student deleted successfully with id: {}", id);

@@ -28,16 +28,10 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
       filterChain.doFilter(request, response);
     } finally {
       long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
-      String queryString = request.getQueryString();
-      String requestPath =
-          queryString != null
-              ? request.getRequestURI() + "?" + queryString
-              : request.getRequestURI();
-
       log.info(
           "{} {} -> {} ({} ms)",
           request.getMethod(),
-          requestPath,
+          request.getRequestURI(),
           response.getStatus(),
           durationMs);
     }

@@ -52,19 +52,13 @@ public class HttpHighlightConverter extends CompositeConverter<ILoggingEvent> {
         path);
   }
 
+  private static final int METHOD_WIDTH = 8;
+
   private String centerMethod(String method) {
-    return switch (method) {
-      case "GET" -> "  GET   ";
-      case "PUT" -> "  PUT   ";
-      case "POST" -> "  POST  ";
-      case "PATCH" -> " PATCH  ";
-      case "DELETE" -> " DELETE ";
-      default -> {
-        int left = Math.max(0, (8 - method.length()) / 2);
-        int right = Math.max(0, 8 - method.length() - left);
-        yield " ".repeat(left) + method + " ".repeat(right);
-      }
-    };
+    int totalPadding = Math.max(0, METHOD_WIDTH - method.length());
+    int left = totalPadding / 2;
+    int right = totalPadding - left;
+    return " ".repeat(left) + method + " ".repeat(right);
   }
 
   private String statusBg(int status) {

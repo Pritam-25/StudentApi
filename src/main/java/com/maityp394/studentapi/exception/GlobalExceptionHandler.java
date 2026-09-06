@@ -174,8 +174,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   public ResponseEntity<ProblemDetail> handleApplicationException(
       ApplicationException ex, HttpServletRequest request) {
 
-    String detail = ex.getDetail() != null ? ex.getDetail() : ex.getMessage();
-    log.debug("Application exception [{}]: {}", ex.getErrorCode().name(), detail);
+    log.debug("Application exception [{}]", ex.getErrorCode().name());
 
     ProblemDetail problem = buildProblem(ex.getErrorCode(), ex.getDetail(), request);
 

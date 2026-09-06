@@ -197,6 +197,13 @@
 				<groupId>com.diffplug.spotless</groupId>
 				<artifactId>spotless-maven-plugin</artifactId>
 				<version>3.10.1</version>
+				<executions>
+					<execution>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
 				<configuration>
 					<java>
 						<cleanthat/>
@@ -206,6 +213,24 @@
 						</googleJavaFormat>
 						<formatAnnotations/>
 					</java>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.rudikershaw.gitbuildhook</groupId>
+				<artifactId>git-build-hook-maven-plugin</artifactId>
+				<version>3.6.0</version>
+				<executions>
+					<execution>
+						<phase>initialize</phase>
+						<goals>
+							<goal>configure</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<gitConfig>
+						<core.hooksPath>.githooks</core.hooksPath>
+					</gitConfig>
 				</configuration>
 			</plugin>
 		</plugins>
