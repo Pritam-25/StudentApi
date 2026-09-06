@@ -271,8 +271,46 @@ class StudentApiApplicationTests {
     UUID id = UUID.fromString(idStr);
 
     Student saved = studentRepository.findById(id).orElseThrow();
-    assertThat(saved.getPassword()).isNotEqualTo(rawPassword);
-    assertThat(saved.getPassword()).startsWith("$2a$");
+    assertThat(saved.getPassword()).isNotEqualTo(rawPassword).startsWith("$2a$");
     assertThat(passwordEncoder.matches(rawPassword, saved.getPassword())).isTrue();
+  }
+
+  @Test
+  void shouldGenerateRequestIdHeaderWhenMissingInRequest() {
+    ResponseEntity<String> response =
+        testRestTemplate.getForEntity("/api/v1/students", String.class);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    String requestId = response.getHeaders().getFirst("X-Request-ID");
+    assertThat(requestId).isNotBlank();
+    assertThat(UUID.fromString(requestId)).isNotNull();
+  }
+
+  @Test
+  void shouldPreserveIncomingRequestIdHeader() {
+    String customRequestId = "custom-trace-id-12345";
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("X-Request-ID", customRequestId);
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange("/api/v1/students", HttpMethod.GET, entity, String.class);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    assertThat(response.getHeaders().getFirst("X-Request-ID")).isEqualTo(customRequestId);
+  }
+
+  @Test
+  void shouldIncludeRequestIdHeaderOnExceptionResponses() {
+    String customRequestId = "error-trace-id-999";
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("X-Request-ID", customRequestId);
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange(
+            "/api/v1/students/invalid-uuid", HttpMethod.GET, entity, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getHeaders().getFirst("X-Request-ID")).isEqualTo(customRequestId);
   }
 }

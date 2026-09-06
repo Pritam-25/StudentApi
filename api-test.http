@@ -1,0 +1,74 @@
+@baseUrl = http://localhost:8000
+
+# Default fallback ID (Will be automatically overwritten when Request #3 runs)
+@studentId = {{createStudent.response.body.data.id}}
+
+### 1. Root / Health Check Endpoint
+GET {{baseUrl}}/
+
+### 2. Get All Students (Paginated & Sorted)
+GET {{baseUrl}}/api/v1/students?page=0&size=5&sort=name,asc
+
+### 3. Create a New Student (POST)
+# @name createStudent
+POST {{baseUrl}}/api/v1/students
+Content-Type: application/json
+
+{
+  "name": "Alex Johnson",
+  "email": "alex.john676@example.com",
+  "password": "SecurePassword123!"
+}
+
+### 4. Get Student By ID (GET)
+GET {{baseUrl}}/api/v1/students/{{studentId}}
+
+### 5. Update Student (Full Update - PUT)
+PUT {{baseUrl}}/api/v1/students/{{studentId}}
+Content-Type: application/json
+
+{
+  "name": "Alex Johnson Updated",
+  "email": "alex.updated@example.com"
+}
+
+### 6. Patch Student (Partial Update - PATCH)
+PATCH {{baseUrl}}/api/v1/students/{{studentId}}
+Content-Type: application/json
+
+{
+  "name": "Alex Johnson Patched new"
+}
+
+### 7. Delete Student By ID (DELETE)
+DELETE {{baseUrl}}/api/v1/students/{{studentId}}
+
+### ==================================================================
+### Error Handling & Validation Scenarios (RFC 9457 Testing)
+### ==================================================================
+
+### 8. Validation Error - Invalid Payload (HTTP 400)
+POST {{baseUrl}}/api/v1/students
+Content-Type: application/json
+
+{
+  "name": "A",
+  "email": "invalid-email-format",
+  "password": "123"
+}
+
+### 9. Conflict Error - Duplicate Email (HTTP 409)
+POST {{baseUrl}}/api/v1/students
+Content-Type: application/json
+
+{
+  "name": "Duplicate User",
+  "email": "alex.updated@example.com",
+  "password": "SecurePassword123!"
+}
+
+### 10. Type Mismatch Error - Malformed UUID Path Variable (HTTP 400)
+GET {{baseUrl}}/api/v1/students/invalid-uuid-format
+
+### 11. Resource Not Found Error - Non-existent UUID (HTTP 404)
+GET {{baseUrl}}/api/v1/students/00000000-0000-0000-0000-000000000000

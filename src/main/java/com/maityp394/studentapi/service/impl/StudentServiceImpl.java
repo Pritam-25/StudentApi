@@ -45,7 +45,7 @@ public class StudentServiceImpl implements StudentService {
   /** {@inheritDoc} */
   @Override
   public StudentResponse createStudent(CreateStudentRequest request) {
-    log.debug("Creating student with email={}", request.email());
+    log.debug("Creating new student");
 
     if (studentRepository.existsByEmail(request.email())) {
       throw new DuplicateResourceException(
