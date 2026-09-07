@@ -4,13 +4,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
-import com.maityp394.studentapi.dto.request.CreateStudentRequest;
+import com.maityp394.studentapi.dto.request.LoginRequest;
 import com.maityp394.studentapi.dto.request.PatchStudentRequest;
+import com.maityp394.studentapi.dto.request.RegisterRequest;
 import com.maityp394.studentapi.dto.request.UpdateStudentRequest;
+import com.maityp394.studentapi.entity.Responsibility;
 import com.maityp394.studentapi.entity.Student;
 import com.maityp394.studentapi.repository.StudentRepository;
-import java.net.URI;
+import com.maityp394.studentapi.security.JwtService;
+import java.util.List;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
@@ -26,19 +30,48 @@ class StudentApiApplicationTests {
   @Autowired TestRestTemplate testRestTemplate;
   @Autowired StudentRepository studentRepository;
   @Autowired PasswordEncoder passwordEncoder;
+  @Autowired JwtService jwtService;
+
+  private String authToken;
+  private UUID authenticatedStudentId;
+
+  @BeforeEach
+  void setUp() {
+    studentRepository.deleteAll();
+    Student student = new Student();
+    student.setName("Auth User");
+    student.setEmail("auth.user@example.com");
+    student.setPasswordHash(passwordEncoder.encode("Password123!"));
+    student.setResponsibility(Responsibility.STUDENT);
+    Student saved = studentRepository.save(student);
+    authenticatedStudentId = saved.getId();
+    authToken = jwtService.generateAccessToken(saved);
+
+    testRestTemplate
+        .getRestTemplate()
+        .setInterceptors(
+            List.of(
+                (request, body, execution) -> {
+                  if (request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION) == null
+                      && request.getHeaders().getFirst("X-Skip-Auth") == null) {
+                    request.getHeaders().setBearerAuth(authToken);
+                  }
+                  return execution.execute(request, body);
+                }));
+  }
 
   @Test
   void shouldReturnStudentWhenValidIdIsProvided() {
-    CreateStudentRequest newStudent =
-        new CreateStudentRequest("John Doe", "john.doe@example.com", "Secret123!");
+    RegisterRequest newStudent =
+        new RegisterRequest("John Doe", "john.doe@example.com", "Secret123!");
     ResponseEntity<String> createResponse =
-        testRestTemplate.postForEntity("/api/v1/students", newStudent, String.class);
+        testRestTemplate.postForEntity("/api/v1/auth/register", newStudent, String.class);
     assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
     DocumentContext createContext = JsonPath.parse(createResponse.getBody());
     String id = createContext.read("$.data.id");
     assertThat(id).isNotBlank();
-    assertThat((String) createContext.read("$.message")).isEqualTo("Student created successfully");
+    assertThat((String) createContext.read("$.message")).isEqualTo("Registration successful");
     assertThat((String) createContext.read("$.timestamp")).isNotBlank();
 
     ResponseEntity<String> response =
@@ -86,25 +119,10 @@ class StudentApiApplicationTests {
   }
 
   @Test
-  void shouldCreateNewStudent() {
-    CreateStudentRequest newStudent =
-        new CreateStudentRequest("Jane Doe", "jane.doe@example.com", "Secret123!");
-    ResponseEntity<String> response =
-        testRestTemplate.postForEntity("/api/v1/students", newStudent, String.class);
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-
-    URI locationOfNewStudent = response.getHeaders().getLocation();
-    assertThat(locationOfNewStudent).isNotNull();
-    ResponseEntity<String> getResponse =
-        testRestTemplate.getForEntity(locationOfNewStudent, String.class);
-    assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
-  }
-
-  @Test
   void shouldReturnValidationProblemDetailWhenInvalidPayload() {
-    CreateStudentRequest invalidStudent = new CreateStudentRequest("", "not-an-email", "short");
+    RegisterRequest invalidStudent = new RegisterRequest("", "not-an-email", "short");
     ResponseEntity<String> response =
-        testRestTemplate.postForEntity("/api/v1/students", invalidStudent, String.class);
+        testRestTemplate.postForEntity("/api/v1/auth/register", invalidStudent, String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
 
@@ -121,39 +139,15 @@ class StudentApiApplicationTests {
   }
 
   @Test
-  void shouldReturnConflictWhenCreatingDuplicateEmail() {
-    CreateStudentRequest first =
-        new CreateStudentRequest("Alice One", "alice.dup@example.com", "Secret123!");
-    ResponseEntity<String> firstResponse =
-        testRestTemplate.postForEntity("/api/v1/students", first, String.class);
-    assertThat(firstResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-
-    CreateStudentRequest duplicate =
-        new CreateStudentRequest("Alice Two", "alice.dup@example.com", "Secret123!");
-    ResponseEntity<String> dupResponse =
-        testRestTemplate.postForEntity("/api/v1/students", duplicate, String.class);
-    assertThat(dupResponse.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-
-    DocumentContext documentContext = JsonPath.parse(dupResponse.getBody());
-    assertThat((Integer) documentContext.read("$.status")).isEqualTo(409);
-    assertThat((String) documentContext.read("$.title")).isEqualTo("Student Email Already Exists");
-    assertThat((String) documentContext.read("$.code")).isEqualTo("STUDENT_EMAIL_ALREADY_EXISTS");
-    assertThat((String) documentContext.read("$.detail")).contains("alice.dup@example.com");
-    assertThat((String) documentContext.read("$.timestamp")).isNotBlank();
-  }
-
-  @Test
   void shouldReturnConflictWhenUpdatingToExistingEmail() {
-    CreateStudentRequest s1 =
-        new CreateStudentRequest("User One", "user1@example.com", "Secret123!");
+    RegisterRequest s1 = new RegisterRequest("User One", "user1@example.com", "Secret123!");
     ResponseEntity<String> r1 =
-        testRestTemplate.postForEntity("/api/v1/students", s1, String.class);
+        testRestTemplate.postForEntity("/api/v1/auth/register", s1, String.class);
     assertThat(r1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
-    CreateStudentRequest s2 =
-        new CreateStudentRequest("User Two", "user2@example.com", "Secret123!");
+    RegisterRequest s2 = new RegisterRequest("User Two", "user2@example.com", "Secret123!");
     ResponseEntity<String> r2 =
-        testRestTemplate.postForEntity("/api/v1/students", s2, String.class);
+        testRestTemplate.postForEntity("/api/v1/auth/register", s2, String.class);
     assertThat(r2.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     String s2Id = JsonPath.parse(r2.getBody()).read("$.data.id");
 
@@ -176,16 +170,14 @@ class StudentApiApplicationTests {
 
   @Test
   void shouldReturnConflictWhenPatchingToExistingEmail() {
-    CreateStudentRequest s1 =
-        new CreateStudentRequest("Patch One", "patch1@example.com", "Secret123!");
+    RegisterRequest s1 = new RegisterRequest("Patch One", "patch1@example.com", "Secret123!");
     ResponseEntity<String> r1 =
-        testRestTemplate.postForEntity("/api/v1/students", s1, String.class);
+        testRestTemplate.postForEntity("/api/v1/auth/register", s1, String.class);
     assertThat(r1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
-    CreateStudentRequest s2 =
-        new CreateStudentRequest("Patch Two", "patch2@example.com", "Secret123!");
+    RegisterRequest s2 = new RegisterRequest("Patch Two", "patch2@example.com", "Secret123!");
     ResponseEntity<String> r2 =
-        testRestTemplate.postForEntity("/api/v1/students", s2, String.class);
+        testRestTemplate.postForEntity("/api/v1/auth/register", s2, String.class);
     assertThat(r2.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     String s2Id = JsonPath.parse(r2.getBody()).read("$.data.id");
 
@@ -240,10 +232,10 @@ class StudentApiApplicationTests {
 
   @Test
   void shouldDeleteStudentSuccessfully() {
-    CreateStudentRequest student =
-        new CreateStudentRequest("To Delete", "todelete@example.com", "Secret123!");
+    RegisterRequest student =
+        new RegisterRequest("To Delete", "todelete@example.com", "Secret123!");
     ResponseEntity<String> createResponse =
-        testRestTemplate.postForEntity("/api/v1/students", student, String.class);
+        testRestTemplate.postForEntity("/api/v1/auth/register", student, String.class);
     assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     String id = JsonPath.parse(createResponse.getBody()).read("$.data.id");
 
@@ -260,19 +252,19 @@ class StudentApiApplicationTests {
   @Test
   void shouldHashPasswordWhenCreatingStudent() {
     String rawPassword = "MySecurePassword123!";
-    CreateStudentRequest request =
-        new CreateStudentRequest("Security Test", "security.test@example.com", rawPassword);
+    RegisterRequest request =
+        new RegisterRequest("Security Test", "security.test@example.com", rawPassword);
 
     ResponseEntity<String> response =
-        testRestTemplate.postForEntity("/api/v1/students", request, String.class);
+        testRestTemplate.postForEntity("/api/v1/auth/register", request, String.class);
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
     String idStr = JsonPath.parse(response.getBody()).read("$.data.id");
     UUID id = UUID.fromString(idStr);
 
     Student saved = studentRepository.findById(id).orElseThrow();
-    assertThat(saved.getPassword()).isNotEqualTo(rawPassword).startsWith("$2a$");
-    assertThat(passwordEncoder.matches(rawPassword, saved.getPassword())).isTrue();
+    assertThat(saved.getPasswordHash()).isNotEqualTo(rawPassword).startsWith("$2a$");
+    assertThat(passwordEncoder.matches(rawPassword, saved.getPasswordHash())).isTrue();
   }
 
   @Test
@@ -312,5 +304,111 @@ class StudentApiApplicationTests {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     assertThat(response.getHeaders().getFirst("X-Request-ID")).isEqualTo(customRequestId);
+  }
+
+  @Test
+  void shouldRegisterNewStudentSuccessfully() {
+    RegisterRequest registerRequest =
+        new RegisterRequest("New Student", "new.student@example.com", "Secret123!");
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/register", registerRequest, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    assertThat(response.getHeaders().getLocation()).isNotNull();
+
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.message")).isEqualTo("Registration successful");
+    assertThat((String) documentContext.read("$.data.name")).isEqualTo("New Student");
+    assertThat((String) documentContext.read("$.data.email")).isEqualTo("new.student@example.com");
+    String id = documentContext.read("$.data.id");
+    assertThat(id).isNotBlank();
+
+    Student saved = studentRepository.findByEmail("new.student@example.com").orElseThrow();
+    assertThat(saved.getPasswordHash()).startsWith("$2a$");
+    assertThat(passwordEncoder.matches("Secret123!", saved.getPasswordHash())).isTrue();
+  }
+
+  @Test
+  void shouldFailRegistrationWhenEmailAlreadyExists() {
+    RegisterRequest registerRequest =
+        new RegisterRequest("Duplicate User", "auth.user@example.com", "Secret123!");
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/register", registerRequest, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.code")).isEqualTo("STUDENT_EMAIL_ALREADY_EXISTS");
+  }
+
+  @Test
+  void shouldLogoutSuccessfully() {
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/logout", null, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.message")).isEqualTo("Logged out successfully");
+  }
+
+  @Test
+  void shouldLoginSuccessfullyAndReturnJwt() {
+    LoginRequest loginRequest = new LoginRequest("auth.user@example.com", "Password123!");
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/login", loginRequest, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.message")).isEqualTo("Login successful");
+    assertThat((String) documentContext.read("$.data.tokenType")).isEqualTo("Bearer");
+    assertThat((String) documentContext.read("$.data.accessToken")).isNotBlank();
+    assertThat((Integer) documentContext.read("$.data.expiresIn")).isEqualTo(900);
+  }
+
+  @Test
+  void shouldFailLoginWithBadCredentials() {
+    LoginRequest loginRequest = new LoginRequest("auth.user@example.com", "WrongPassword!");
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/login", loginRequest, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.code")).isEqualTo("INVALID_CREDENTIALS");
+  }
+
+  @Test
+  void shouldFetchCurrentUserWithJwt() {
+    ResponseEntity<String> response =
+        testRestTemplate.getForEntity("/api/v1/auth/me", String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.message")).isEqualTo("User fetched successfully");
+    assertThat((String) documentContext.read("$.data.id"))
+        .isEqualTo(authenticatedStudentId.toString());
+    assertThat((String) documentContext.read("$.data.email")).isEqualTo("auth.user@example.com");
+  }
+
+  @Test
+  void shouldRejectUnauthenticatedAccessToProtectedEndpoint() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("X-Skip-Auth", "true");
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange("/api/v1/students", HttpMethod.GET, entity, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+  }
+
+  @Test
+  void shouldRejectInvalidJwtOnProtectedEndpoint() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setBearerAuth("invalid.jwt.token");
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange("/api/v1/students", HttpMethod.GET, entity, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
   }
 }

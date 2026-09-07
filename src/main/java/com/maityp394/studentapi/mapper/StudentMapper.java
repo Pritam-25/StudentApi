@@ -1,7 +1,8 @@
 package com.maityp394.studentapi.mapper;
 
-import com.maityp394.studentapi.dto.request.CreateStudentRequest;
+import com.maityp394.studentapi.dto.request.RegisterRequest;
 import com.maityp394.studentapi.dto.response.StudentResponse;
+import com.maityp394.studentapi.entity.Responsibility;
 import com.maityp394.studentapi.entity.Student;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -22,17 +23,18 @@ public class StudentMapper {
   }
 
   /**
-   * Converts a {@link CreateStudentRequest} DTO to a new {@link Student} entity, hashing the raw
+   * Converts a {@link RegisterRequest} DTO to a new {@link Student} entity, hashing the raw
    * password using BCrypt before persisting to prevent plaintext password leakage.
    *
-   * @param req the student creation request DTO
+   * @param req the registration request DTO
    * @return a newly populated {@link Student} entity with a hashed password
    */
-  public Student toEntity(CreateStudentRequest req) {
+  public Student toEntity(RegisterRequest req) {
     Student student = new Student();
     student.setName(req.name());
-    student.setEmail(req.email());
-    student.setPassword(passwordEncoder.encode(req.password()));
+    student.setEmail(req.email().trim().toLowerCase());
+    student.setPasswordHash(passwordEncoder.encode(req.password()));
+    student.setResponsibility(Responsibility.STUDENT);
     return student;
   }
 

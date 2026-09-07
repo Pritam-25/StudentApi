@@ -1,20 +1,17 @@
 package com.maityp394.studentapi.controller;
 
-import com.maityp394.studentapi.dto.request.CreateStudentRequest;
 import com.maityp394.studentapi.dto.request.PatchStudentRequest;
 import com.maityp394.studentapi.dto.request.UpdateStudentRequest;
 import com.maityp394.studentapi.dto.response.ApiResponse;
 import com.maityp394.studentapi.dto.response.StudentResponse;
 import com.maityp394.studentapi.service.StudentService;
 import jakarta.validation.Valid;
-import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * REST controller providing CRUD and partial update endpoints for managing students.
@@ -34,27 +31,6 @@ public class StudentController {
    */
   public StudentController(StudentService studentService) {
     this.studentService = studentService;
-  }
-
-  /**
-   * Creates a new student.
-   *
-   * @param request the student creation request containing student details
-   * @param ucbBuilder URI builder used to compose the Location header
-   * @return a {@link ResponseEntity} containing the created {@link StudentResponse} and a 201
-   *     Created status
-   */
-  @PostMapping
-  public ResponseEntity<ApiResponse<StudentResponse>> createStudent(
-      @Valid @RequestBody CreateStudentRequest request, UriComponentsBuilder ucbBuilder) {
-
-    StudentResponse createdStudent = studentService.createStudent(request);
-
-    URI location =
-        ucbBuilder.path("/api/v1/students/{id}").buildAndExpand(createdStudent.getId()).toUri();
-
-    return ResponseEntity.created(location)
-        .body(new ApiResponse<>("Student created successfully", createdStudent));
   }
 
   /**

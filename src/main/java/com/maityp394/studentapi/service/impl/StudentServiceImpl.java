@@ -1,6 +1,5 @@
 package com.maityp394.studentapi.service.impl;
 
-import com.maityp394.studentapi.dto.request.CreateStudentRequest;
 import com.maityp394.studentapi.dto.request.PatchStudentRequest;
 import com.maityp394.studentapi.dto.request.UpdateStudentRequest;
 import com.maityp394.studentapi.dto.response.StudentResponse;
@@ -40,21 +39,6 @@ public class StudentServiceImpl implements StudentService {
   public StudentServiceImpl(StudentRepository studentRepository, StudentMapper studentMapper) {
     this.studentRepository = studentRepository;
     this.studentMapper = studentMapper;
-  }
-
-  /** {@inheritDoc} */
-  @Override
-  public StudentResponse createStudent(CreateStudentRequest request) {
-    if (studentRepository.existsByEmail(request.email())) {
-      throw new DuplicateResourceException(
-          ErrorCode.STUDENT_EMAIL_ALREADY_EXISTS,
-          "Student already exists with email: " + request.email());
-    }
-
-    Student student = studentMapper.toEntity(request);
-    Student newStudent = studentRepository.save(student);
-    log.info("Student created successfully: id={}", newStudent.getId());
-    return studentMapper.toResponse(newStudent);
   }
 
   /** {@inheritDoc} */

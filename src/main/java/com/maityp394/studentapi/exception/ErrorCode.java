@@ -21,7 +21,13 @@ public enum ErrorCode {
   // Student Domain
   // ============================================================
   STUDENT_NOT_FOUND(HttpStatus.NOT_FOUND, "Student Not Found"),
-  STUDENT_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Student Email Already Exists");
+  STUDENT_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Student Email Already Exists"),
+
+  // ============================================================
+  // Authentication
+  // ============================================================
+  INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "Invalid Credentials"),
+  AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "Authentication Required");
 
   private final HttpStatus status;
   private final String title;

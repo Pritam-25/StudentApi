@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -335,6 +336,26 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             request);
 
     return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+  }
+
+  /**
+   * Intercepts Spring Security bad credentials failures during login authentication.
+   *
+   * @param ex the bad credentials exception
+   * @param request the current {@link HttpServletRequest}
+   * @return a {@link ResponseEntity} with HTTP 401 Unauthorized enclosing an {@code
+   *     INVALID_CREDENTIALS} {@link ProblemDetail}
+   */
+  @ExceptionHandler(BadCredentialsException.class)
+  public ResponseEntity<ProblemDetail> handleBadCredentials(
+      BadCredentialsException ex, HttpServletRequest request) {
+
+    log.debug("Bad credentials authentication failure");
+
+    ProblemDetail problem =
+        buildProblem(ErrorCode.INVALID_CREDENTIALS, "Invalid email or password", request);
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
   }
 
   /**

@@ -28,11 +28,13 @@ public class Student {
   @Column(unique = true, nullable = false)
   private String email;
 
-  /** The encrypted password for the student account. */
-  private String password;
+  /** BCrypt hash of the student's password. Never stores plaintext. */
+  @Column(nullable = false)
+  private String passwordHash;
 
   /** The role or responsibility of the student. */
   @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
   private Responsibility responsibility;
 
   /** Timestamp indicating when the student record was created. */

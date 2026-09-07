@@ -1,6 +1,5 @@
 package com.maityp394.studentapi.service;
 
-import com.maityp394.studentapi.dto.request.CreateStudentRequest;
 import com.maityp394.studentapi.dto.request.PatchStudentRequest;
 import com.maityp394.studentapi.dto.request.UpdateStudentRequest;
 import com.maityp394.studentapi.dto.response.StudentResponse;
@@ -10,14 +9,6 @@ import org.springframework.data.domain.Pageable;
 
 /** Service interface defining business logic operations for managing students. */
 public interface StudentService {
-
-  /**
-   * Creates a new student record based on the provided request.
-   *
-   * @param request the request containing new student details
-   * @return the newly created {@link StudentResponse}
-   */
-  StudentResponse createStudent(CreateStudentRequest request);
 
   /**
    * Retrieves a student by their unique ID.
