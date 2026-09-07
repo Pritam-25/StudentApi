@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="studentapi"/>
+
+    <!-- Development Profile: Styled Console with %clr and HttpHighlightConverter -->
+    <springProfile name="!prod">
+        <conversionRule conversionWord="httpClr" class="com.maityp394.studentapi.logging.HttpHighlightConverter"/>
+
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%clr([%d{yyyy-MM-dd - HH:mm:ss}]){faint} %clr(%5p) %clr([${appName}]){magenta} %clr(%-35.35logger{34}){cyan} : %httpClr(%m){}%n</pattern>
+            </encoder>
+        </appender>
+
+        <logger name="com.maityp394.studentapi" level="DEBUG"/>
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <!-- Production Profile: Plain text without ANSI escape sequences -->
+    <springProfile name="prod">
+        <appender name="PLAIN_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>[%d{yyyy-MM-dd - HH:mm:ss}] %5p [${appName}] [%X{requestId:-}] [%15.15t] %-35.35logger{34} : %m%n</pattern>
+            </encoder>
+        </appender>
+
+        <logger name="com.maityp394.studentapi" level="INFO"/>
+        <root level="INFO">
+            <appender-ref ref="PLAIN_CONSOLE"/>
+        </root>
+    </springProfile>
+</configuration>

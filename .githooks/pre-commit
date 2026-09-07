@@ -1,0 +1,9 @@
+#!/bin/sh
+echo "Applying Spotless formatting..."
+./mvnw spotless:apply
+
+# Re-stage any staged Java files that Spotless may have reformatted
+STAGED_JAVA_FILES=$(git diff --cached --name-only --diff-filter=d -- '*.java')
+if [ -n "$STAGED_JAVA_FILES" ]; then
+    git add $STAGED_JAVA_FILES
+fi

@@ -174,12 +174,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   public ResponseEntity<ProblemDetail> handleApplicationException(
       ApplicationException ex, HttpServletRequest request) {
 
-    String detail = ex.getDetail() != null ? ex.getDetail() : ex.getMessage();
-    log.warn(
-        "Application exception [{}] on {}: {}",
-        ex.getErrorCode().name(),
-        request.getRequestURI(),
-        detail);
+    log.debug("Application exception [{}]", ex.getErrorCode().name());
 
     ProblemDetail problem = buildProblem(ex.getErrorCode(), ex.getDetail(), request);
 
@@ -220,8 +215,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     HttpServletRequest servletRequest =
         (request instanceof ServletWebRequest swr) ? swr.getRequest() : null;
 
-    String uri = (servletRequest != null) ? servletRequest.getRequestURI() : "unknown";
-    log.warn("Validation failed on {} with {} error(s): {}", uri, errors.size(), errors);
+    log.debug("Validation failed with {} error(s)", errors.size());
 
     ProblemDetail problem = buildValidationProblem(errors, servletRequest);
 
@@ -271,9 +265,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     HttpServletRequest servletRequest =
         (request instanceof ServletWebRequest swr) ? swr.getRequest() : null;
 
-    String uri = (servletRequest != null) ? servletRequest.getRequestURI() : "unknown";
-    log.warn(
-        "Handler method validation failed on {} with {} error(s): {}", uri, errors.size(), errors);
+    log.debug("Handler method validation failed with {} error(s)", errors.size());
 
     ProblemDetail problem = buildValidationProblem(errors, servletRequest);
 
@@ -308,7 +300,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             "Failed to convert parameter '%s' with value '%s' to required type '%s'",
             ex.getName(), ex.getValue(), requiredType);
 
-    log.warn("Method argument type mismatch on {}: {}", request.getRequestURI(), detail);
+    log.debug("Method argument type mismatch on parameter '{}'", ex.getName());
 
     ProblemDetail problem = buildProblem(ErrorCode.INVALID_PARAMETER_TYPE, detail, request);
 
@@ -334,8 +326,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   public ResponseEntity<ProblemDetail> handleDataIntegrityViolation(
       DataIntegrityViolationException ex, HttpServletRequest request) {
 
-    String rootCause = ex.getMostSpecificCause().getMessage();
-    log.error("Database integrity violation on {}: {}", request.getRequestURI(), rootCause);
+    log.warn("Database integrity violation occurred");
 
     ProblemDetail problem =
         buildProblem(
@@ -364,7 +355,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   public ResponseEntity<ProblemDetail> handleUnexpectedException(
       Exception ex, HttpServletRequest request) {
 
-    log.error("Unexpected error while processing request {}", request.getRequestURI(), ex);
+    log.error("Unexpected error occurred while processing request", ex);
 
     ProblemDetail problem =
         buildProblem(ErrorCode.INTERNAL_SERVER_ERROR, "An unexpected error occurred", request);
