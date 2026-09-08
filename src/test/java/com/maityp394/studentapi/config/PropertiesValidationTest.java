@@ -75,8 +75,9 @@ class PropertiesValidationTest {
         .withPropertyValues("jwt.secret=")
         .run(
             context -> {
-              assertThat(context.getStartupFailure()).isNotNull();
-              assertThat(context.getStartupFailure()).hasStackTraceContaining("must not be blank");
+              assertThat(context.getStartupFailure())
+                  .isNotNull()
+                  .hasStackTraceContaining("must not be blank");
             });
   }
 
@@ -87,22 +88,33 @@ class PropertiesValidationTest {
         .withPropertyValues("jwt.secret=short-key-under-32-chars")
         .run(
             context -> {
-              assertThat(context.getStartupFailure()).isNotNull();
               assertThat(context.getStartupFailure())
+                  .isNotNull()
                   .hasStackTraceContaining("must be at least 32 characters");
             });
   }
 
   @Test
-  @DisplayName("Should fail startup when jwt.expiration-ms is zero or negative")
-  void shouldFailWhenExpirationIsNotPositive() {
+  @DisplayName("Should fail startup when jwt.expiration-ms is less than 1000 ms")
+  void shouldFailWhenExpirationIsLessThanMinimum() {
+    contextRunner
+        .withPropertyValues(
+            "jwt.secret=this-is-a-valid-secret-key-with-at-least-32-chars", "jwt.expiration-ms=500")
+        .run(
+            context -> {
+              assertThat(context.getStartupFailure())
+                  .isNotNull()
+                  .hasStackTraceContaining("must be at least 1000 ms");
+            });
+
     contextRunner
         .withPropertyValues(
             "jwt.secret=this-is-a-valid-secret-key-with-at-least-32-chars", "jwt.expiration-ms=0")
         .run(
             context -> {
-              assertThat(context.getStartupFailure()).isNotNull();
-              assertThat(context.getStartupFailure()).hasStackTraceContaining("greater than 0");
+              assertThat(context.getStartupFailure())
+                  .isNotNull()
+                  .hasStackTraceContaining("must be at least 1000 ms");
             });
 
     contextRunner
@@ -111,8 +123,9 @@ class PropertiesValidationTest {
             "jwt.expiration-ms=-100")
         .run(
             context -> {
-              assertThat(context.getStartupFailure()).isNotNull();
-              assertThat(context.getStartupFailure()).hasStackTraceContaining("greater than 0");
+              assertThat(context.getStartupFailure())
+                  .isNotNull()
+                  .hasStackTraceContaining("must be at least 1000 ms");
             });
   }
 

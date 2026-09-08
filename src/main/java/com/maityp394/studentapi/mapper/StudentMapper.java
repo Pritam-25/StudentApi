@@ -4,36 +4,25 @@ import com.maityp394.studentapi.dto.request.RegisterRequest;
 import com.maityp394.studentapi.dto.response.StudentResponse;
 import com.maityp394.studentapi.entity.Responsibility;
 import com.maityp394.studentapi.entity.Student;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /** Component responsible for mapping between student entity and student DTOs. */
 @Component
 public class StudentMapper {
 
-  private final PasswordEncoder passwordEncoder;
-
   /**
-   * Constructs a new {@link StudentMapper} with the required {@link PasswordEncoder}.
-   *
-   * @param passwordEncoder the encoder used to hash sensitive credentials
-   */
-  public StudentMapper(PasswordEncoder passwordEncoder) {
-    this.passwordEncoder = passwordEncoder;
-  }
-
-  /**
-   * Converts a {@link RegisterRequest} DTO to a new {@link Student} entity, hashing the raw
-   * password using BCrypt before persisting to prevent plaintext password leakage.
+   * Converts a {@link RegisterRequest} DTO and an encoded password hash to a new {@link Student}
+   * entity.
    *
    * @param req the registration request DTO
-   * @return a newly populated {@link Student} entity with a hashed password
+   * @param passwordHash the cryptographically hashed password
+   * @return a newly populated {@link Student} entity with the hashed password
    */
-  public Student toEntity(RegisterRequest req) {
+  public Student toEntity(RegisterRequest req, String passwordHash) {
     Student student = new Student();
     student.setName(req.name());
     student.setEmail(req.email().trim().toLowerCase());
-    student.setPasswordHash(passwordEncoder.encode(req.password()));
+    student.setPasswordHash(passwordHash);
     student.setResponsibility(Responsibility.STUDENT);
     return student;
   }

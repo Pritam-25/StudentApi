@@ -14,9 +14,11 @@ import com.maityp394.studentapi.security.JwtService;
 import com.maityp394.studentapi.service.AuthService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,10 +29,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class AuthServiceImpl implements AuthService {
 
   private final StudentRepository studentRepository;
   private final AuthenticationManager authenticationManager;
+  private final PasswordEncoder passwordEncoder;
   private final JwtService jwtService;
   private final StudentMapper studentMapper;
 
@@ -41,9 +45,11 @@ public class AuthServiceImpl implements AuthService {
       throw new DuplicateResourceException(ErrorCode.STUDENT_EMAIL_ALREADY_EXISTS);
     }
 
-    Student student = studentMapper.toEntity(request);
+    String passwordHash = passwordEncoder.encode(request.password());
+    Student student = studentMapper.toEntity(request, passwordHash);
     Student saved = studentRepository.save(student);
 
+    log.info("Student registerd successfully: id={}", saved.getId());
     return studentMapper.toResponse(saved);
   }
 
@@ -65,6 +71,7 @@ public class AuthServiceImpl implements AuthService {
     String token = jwtService.generateAccessToken(student);
     StudentResponse studentResponse = studentMapper.toResponse(student);
 
+    log.info("Student Loged in successfully.");
     return new AuthResult(studentResponse, token, jwtService.getExpirationSeconds());
   }
 
@@ -76,6 +83,8 @@ public class AuthServiceImpl implements AuthService {
         studentRepository
             .findById(studentId)
             .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.STUDENT_NOT_FOUND));
+
+    log.info("Current Student fetched successfully.");
     return studentMapper.toResponse(student);
   }
 }
