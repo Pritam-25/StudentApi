@@ -198,7 +198,7 @@ Run the full integration test suite covering registration, login, protected endp
 
 ### Interactive Testing (`api-test.http`)
 
-An [api-test.http](file:///d:/REST_API/api-test.http) file is included at the project root for testing with the **REST Client** extension in VS Code or **IntelliJ HTTP Client**.
+An [api-test.http](api-test.http) file is included at the project root for testing with the **REST Client** extension in VS Code or **IntelliJ HTTP Client**.
 
 1. Run **2.1 Register** to create a student.
 2. Run **2.2 Login** to automatically capture the JWT token into `@authToken`.

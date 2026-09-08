@@ -3,66 +3,68 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
+	<!-- ================================================================= -->
+	<!-- Spring Boot Parent & Project Coordinates                          -->
+	<!-- ================================================================= -->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>4.1.1</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
+
 	<groupId>com.maityp394</groupId>
 	<artifactId>studentapi</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name />
-	<description />
-	<url />
+	<name>studentapi</name>
+	<description>Student API</description>
+	<url>https://github.com/Pritam-25/StudentApi</url>
+
 	<licenses>
-		<license />
+		<license>
+			<name>UNLICENSED</name>
+		</license>
 	</licenses>
+
 	<developers>
-		<developer />
+		<developer>
+			<name>Pritam-25</name>
+		</developer>
 	</developers>
+
 	<scm>
-		<connection />
-		<developerConnection />
-		<tag />
-		<url />
+		<connection>scm:git:https://github.com/Pritam-25/StudentApi.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/Pritam-25/StudentApi.git</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/Pritam-25/StudentApi</url>
 	</scm>
+
+	<!-- ================================================================= -->
+	<!-- Project Properties                                               -->
+	<!-- ================================================================= -->
 	<properties>
 		<java.version>25</java.version>
+		<jacoco.version>0.8.14</jacoco.version>
+		<argLine/>
 	</properties>
+
+	<!-- ================================================================= -->
+	<!-- Dependencies                                                      -->
+	<!-- ================================================================= -->
 	<dependencies>
+
+		<!-- ============================================================= -->
+		<!-- 1. Web & REST                                                 -->
+		<!-- ============================================================= -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa</artifactId>
+			<artifactId>spring-boot-starter</artifactId>
 		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>io.github.cdimascio</groupId>
-			<artifactId>dotenv-java</artifactId>
-			<version>3.2.0</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc-test</artifactId>
-			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -72,50 +74,12 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-validation-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<scope>runtime</scope>
-			<optional>true</optional>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-restclient</artifactId>
 		</dependency>
 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-restclient-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-
+		<!-- ============================================================= -->
+		<!-- 2. Security & OAuth2                                          -->
+		<!-- ============================================================= -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
@@ -126,21 +90,127 @@
 			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
 		</dependency>
 
+		<!-- ============================================================= -->
+		<!-- 3. Database & Persistence                                     -->
+		<!-- ============================================================= -->
 		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-test</artifactId>
-			<scope>test</scope>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
-		
+
+		<!-- PostgreSQL JDBC Driver (Runtime) -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- ============================================================= -->
+		<!-- 4. Environment & Configuration Utilities                      -->
+		<!-- ============================================================= -->
+		<!-- .env file loader for Spring Boot 4 -->
+		<dependency>
+			<groupId>me.paulschwarz</groupId>
+			<artifactId>springboot4-dotenv</artifactId>
+			<version>5.1.0</version>
+		</dependency>
+
+		<!-- Annotation Processors (Lombok & Config Metadata) -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-configuration-processor</artifactId>
 			<optional>true</optional>
 		</dependency>
+
+		<!-- ============================================================= -->
+		<!-- 5. Observability & Developer Tools                            -->
+		<!-- ============================================================= -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- ============================================================= -->
+		<!-- 6. Testing                                                    -->
+		<!-- ============================================================= -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-webmvc-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-restclient-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- In-Memory Database for Unit/Integration Tests -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
 
+	<!-- ================================================================= -->
+	<!-- Build & Plugins                                                   -->
+	<!--                                                                   -->
+	<!-- Common Commands:                                                  -->
+	<!--   Run Application:      mvn spring-boot:run                       -->
+	<!--   Compile:              mvn compile                               -->
+	<!--   Run Tests:            mvn test                                  -->
+	<!--   Check Code Format:    mvn spotless:check                        -->
+	<!--   Apply Code Format:    mvn spotless:apply                        -->
+	<!--   Generate Coverage:    mvn clean verify                          -->
+	<!--   Sonar Analysis:       mvn sonar:sonar                           -->
+	<!--   Generate Javadoc:     mvn javadoc:javadoc                       -->
+	<!-- ================================================================= -->
 	<build>
 		<plugins>
+
+			<!-- ========================================================= -->
+			<!-- 1. Core Build & Compilation Plugins                       -->
+			<!-- ========================================================= -->
+			<!-- Spring Boot Repackage & Run: mvn spring-boot:run -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
@@ -153,6 +223,8 @@
 					</excludes>
 				</configuration>
 			</plugin>
+
+			<!-- Java Compiler: javac with Java 25 & Annotation Processors -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -197,20 +269,63 @@
 					<target>25</target>
 				</configuration>
 			</plugin>
-			<plugin>
-				<groupId>org.sonarsource.scanner.maven</groupId>
-				<artifactId>sonar-maven-plugin</artifactId>
-				<version>5.6.0.6792</version>
-			</plugin>
+
+			<!-- Exposes dependency properties to build lifecycle -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.11.2</version>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<goals>
+							<goal>properties</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- ========================================================= -->
+			<!-- 2. Testing & Coverage Plugins                             -->
+			<!-- ========================================================= -->
+			<!-- Unit & Integration Tests: mvn test -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<release>21</release>
-					<doclint>none</doclint>
+					<argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar} -XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
 				</configuration>
 			</plugin>
+
+			<!-- Code Coverage Agent & Reporting: mvn clean verify -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>report</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<configuration>
+							<excludes>
+								<exclude>com/maityp394/studentapi/StudentApiApplication.*</exclude>
+							</excludes>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- ========================================================= -->
+			<!-- 3. Code Quality, Formatting & Static Analysis             -->
+			<!-- ========================================================= -->
+			<!-- Code Formatter (Google Java Format): mvn spotless:apply | mvn spotless:check -->
 			<plugin>
 				<groupId>com.diffplug.spotless</groupId>
 				<artifactId>spotless-maven-plugin</artifactId>
@@ -233,6 +348,18 @@
 					</java>
 				</configuration>
 			</plugin>
+
+			<!-- SonarQube / SonarCloud Scanner: mvn sonar:sonar -->
+			<plugin>
+				<groupId>org.sonarsource.scanner.maven</groupId>
+				<artifactId>sonar-maven-plugin</artifactId>
+				<version>5.6.0.6792</version>
+			</plugin>
+
+			<!-- ========================================================= -->
+			<!-- 4. Git Automation & Documentation                         -->
+			<!-- ========================================================= -->
+			<!-- Configures local Git hooks automatically on build initialize -->
 			<plugin>
 				<groupId>com.rudikershaw.gitbuildhook</groupId>
 				<artifactId>git-build-hook-maven-plugin</artifactId>
@@ -251,6 +378,18 @@
 					</gitConfig>
 				</configuration>
 			</plugin>
+
+			<!-- Javadoc Generation: mvn javadoc:javadoc -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.11.2</version>
+				<configuration>
+					<release>21</release>
+					<doclint>none</doclint>
+				</configuration>
+			</plugin>
+
 		</plugins>
 	</build>
 
