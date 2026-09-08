@@ -38,8 +38,7 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
       AccessDeniedException accessDeniedException)
       throws IOException {
 
-    log.debug(
-        "Access denied on [{}]: {}", request.getRequestURI(), accessDeniedException.getMessage());
+    log.debug("Access denied: {}", accessDeniedException.getMessage());
 
     ErrorCode errorCode;
     String detail;

@@ -49,8 +49,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
       AuthenticationException authException)
       throws IOException {
 
-    log.debug(
-        "Authentication failure on [{}]: {}", request.getRequestURI(), authException.getMessage());
+    log.debug("Authentication failure: {}", authException.getMessage());
 
     boolean isInvalidToken = isInvalidBearerToken(request, authException);
 

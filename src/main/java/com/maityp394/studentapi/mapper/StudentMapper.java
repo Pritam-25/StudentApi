@@ -21,7 +21,7 @@ public class StudentMapper {
   public Student toEntity(RegisterRequest req, String passwordHash) {
     Student student = new Student();
     student.setName(req.name());
-    student.setEmail(req.email().trim().toLowerCase());
+    student.setEmail(req.email());
     student.setPasswordHash(passwordHash);
     student.setResponsibility(Responsibility.STUDENT);
     return student;
@@ -34,6 +34,12 @@ public class StudentMapper {
    * @return a {@link StudentResponse} containing the formatted student details
    */
   public StudentResponse toResponse(Student student) {
-    return new StudentResponse(student.getId(), student.getName(), student.getEmail());
+    return new StudentResponse(
+        student.getId(),
+        student.getName(),
+        student.getEmail(),
+        student.getResponsibility(),
+        student.getCreatedAt(),
+        student.getUpdatedAt());
   }
 }

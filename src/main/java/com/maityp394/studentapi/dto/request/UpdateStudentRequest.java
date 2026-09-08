@@ -12,4 +12,10 @@ import jakarta.validation.constraints.Size;
  */
 public record UpdateStudentRequest(
     @NotBlank(message = "Name is required") @Size(min = 2, max = 30) String name,
-    @NotBlank(message = "Email is required") @Email String email) {}
+    @NotBlank(message = "Email is required") @Email String email) {
+
+  public UpdateStudentRequest {
+    name = name != null ? name.strip() : null;
+    email = email != null ? email.strip().toLowerCase() : null;
+  }
+}

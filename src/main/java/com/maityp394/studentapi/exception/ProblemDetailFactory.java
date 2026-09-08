@@ -37,7 +37,11 @@ public final class ProblemDetailFactory {
     }
 
     if (request != null) {
-      problem.setInstance(URI.create(request.getRequestURI()));
+      try {
+        problem.setInstance(URI.create(request.getRequestURI()));
+      } catch (IllegalArgumentException _) {
+        problem.setInstance(URI.create("/error"));
+      }
     }
 
     problem.setProperty("code", errorCode.name());

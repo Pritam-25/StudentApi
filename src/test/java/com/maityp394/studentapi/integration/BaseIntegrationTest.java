@@ -63,6 +63,16 @@ public abstract class BaseIntegrationTest {
   }
 
   /**
+   * Helper to persist a test class representative ("rep.user@example.com").
+   *
+   * @return persisted {@link Student} entity with CLASS_REPRESENTATIVE responsibility
+   */
+  protected Student createClassRepresentative() {
+    return createTestStudent(
+        "Class Rep", "rep.user@example.com", "Password123!", Responsibility.CLASS_REPRESENTATIVE);
+  }
+
+  /**
    * Helper to generate a signed JWT access token for the given student.
    *
    * @param student student entity

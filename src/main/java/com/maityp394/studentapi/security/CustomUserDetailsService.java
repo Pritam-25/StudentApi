@@ -3,7 +3,6 @@ package com.maityp394.studentapi.security;
 import com.maityp394.studentapi.entity.Student;
 import com.maityp394.studentapi.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -35,10 +34,6 @@ public class CustomUserDetailsService implements UserDetailsService {
             .findByEmail(email)
             .orElseThrow(() -> new UsernameNotFoundException("Invalid credentials"));
 
-    return User.builder()
-        .username(student.getEmail())
-        .password(student.getPasswordHash())
-        .roles(student.getResponsibility().name())
-        .build();
+    return StudentPrincipal.from(student);
   }
 }

@@ -59,7 +59,7 @@ class SecurityIntegrationTest extends BaseIntegrationTest {
   @DisplayName(
       "GET /students - Should authenticate successfully using HttpOnly cookie without Bearer header")
   void shouldAuthenticateUsingHttpOnlyCookieWithoutAuthorizationHeader() {
-    Student student = createDefaultStudent();
+    Student student = createClassRepresentative();
     String token = createAccessToken(student);
     HttpHeaders headers = createCookieHeaders(token, null);
 
@@ -73,7 +73,7 @@ class SecurityIntegrationTest extends BaseIntegrationTest {
   @Test
   @DisplayName("GET /students - Should prioritize Authorization Bearer header over cookie token")
   void shouldPrioritizeAuthorizationHeaderOverCookie() {
-    Student student = createDefaultStudent();
+    Student student = createClassRepresentative();
     String token = createAccessToken(student);
 
     HttpHeaders headers = createBearerHeaders(token);
@@ -132,7 +132,7 @@ class SecurityIntegrationTest extends BaseIntegrationTest {
   @DisplayName(
       "PUT /students/{id} - Should accept state-changing cookie request when valid CSRF token is provided")
   void shouldAcceptStateChangingCookieRequestWithCsrfToken() {
-    Student student = createDefaultStudent();
+    Student student = createClassRepresentative();
     String token = createAccessToken(student);
 
     // Initial GET request to obtain the XSRF-TOKEN cookie
@@ -193,7 +193,7 @@ class SecurityIntegrationTest extends BaseIntegrationTest {
   @DisplayName(
       "POST /auth/logout - Should accept state-changing cookie logout when valid CSRF token is provided")
   void shouldAcceptCookieLogoutWithCsrfToken() {
-    Student student = createDefaultStudent();
+    Student student = createClassRepresentative();
     String token = createAccessToken(student);
 
     // Initial GET request to obtain the XSRF-TOKEN cookie

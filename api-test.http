@@ -16,17 +16,18 @@ GET {{baseUrl}}/
 ### ==================================================================
 
 ### 2.1 Register a New Student (POST)
+# Automatically authenticates and sets HttpOnly 'access_token' cookie (auto-login).
 # @name register
 POST {{baseUrl}}/api/v1/auth/register
 Content-Type: application/json
 
 {
   "name": "Alex Johnson",
-  "email": "alex.johnson486@example.com",
+  "email": "alex.johnson@example.com",
   "password": "SecurePassword123!"
 }
 
-### 2.2 Login to Obtain HttpOnly Cookie (POST)
+### 2.2 Login to Obtain HttpOnly Cookie (POST - Optional if registered above)
 # REST Client automatically captures the 'access_token' Set-Cookie header.
 # @name login
 POST {{baseUrl}}/api/v1/auth/login
@@ -47,9 +48,13 @@ GET {{baseUrl}}/api/v1/auth/me
 ### 3. Student Resource Endpoints (Protected by Cookie / Bearer)
 ### ==================================================================
 
-### 3.1 Get All Students (Paginated & Sorted)
-# Automatically authenticates using the cookie
-GET {{baseUrl}}/api/v1/students?page=0&size=5&sort=name,asc
+### 3.1 Get All Students (Paginated & Sorted - Class Representative Only)
+# Requires ROLE_CLASS_REPRESENTATIVE. Returns HTTP 403 Forbidden for standard STUDENT accounts.
+# Optional query parameters: responsibility=STUDENT|CLASS_REPRESENTATIVE, page, size, sort=createdAt,desc
+GET {{baseUrl}}/api/v1/students?page=0&size=5&sort=createdAt,desc
+
+### 3.1.1 Filter Students by Responsibility (e.g. STUDENT only)
+GET {{baseUrl}}/api/v1/students?responsibility=STUDENT&page=0&size=10&sort=name,asc
 
 ### 3.2 Get Student By ID
 GET {{baseUrl}}/api/v1/students/{{studentId}}
@@ -74,6 +79,16 @@ X-XSRF-TOKEN: {{xsrfToken}}
 
 {
   "name": "Alex Johnson Patched"
+}
+
+### 3.5 Update Student Responsibility (PATCH - Class Representative Only)
+# Promotes or reassigns a student's institutional responsibility.
+PATCH {{baseUrl}}/api/v1/students/{{studentId}}/responsibility
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrfToken}}
+
+{
+  "responsibility": "CLASS_REPRESENTATIVE"
 }
 
 ### ==================================================================

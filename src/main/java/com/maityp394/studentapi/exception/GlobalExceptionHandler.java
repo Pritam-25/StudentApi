@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -194,7 +195,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     ex.getBindingResult()
         .getFieldErrors()
-        .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+        .forEach(
+            error -> {
+              String msg = error.getDefaultMessage();
+              if (msg != null) {
+                errors.merge(error.getField(), msg, (first, second) -> first + ", " + second);
+              }
+            });
 
     HttpServletRequest servletRequest =
         (request instanceof ServletWebRequest swr) ? swr.getRequest() : null;
@@ -240,10 +247,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
               result
                   .getResolvableErrors()
                   .forEach(
-                      resolvable ->
-                          errors.put(
+                      resolvable -> {
+                        String msg = resolvable.getDefaultMessage();
+                        if (msg != null) {
+                          errors.merge(
                               paramName != null ? paramName : "parameter",
-                              resolvable.getDefaultMessage()));
+                              msg,
+                              (first, second) -> first + ", " + second);
+                        }
+                      });
             });
 
     HttpServletRequest servletRequest =
@@ -339,6 +351,27 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         buildProblem(ErrorCode.INVALID_CREDENTIALS, "Invalid email or password", request);
 
     return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
+  }
+
+  /**
+   * Intercepts Spring Security access denied failures (e.g. @PreAuthorize rejections).
+   *
+   * @param ex the access denied exception
+   * @param request the current {@link HttpServletRequest}
+   * @return a {@link ResponseEntity} with HTTP 403 Forbidden enclosing a {@code FORBIDDEN} {@link
+   *     ProblemDetail}
+   */
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ProblemDetail> handleAccessDenied(
+      AccessDeniedException ex, HttpServletRequest request) {
+
+    log.debug("Authorization failure: {}", ex.getMessage());
+
+    ProblemDetail problem =
+        buildProblem(
+            ErrorCode.FORBIDDEN, "You do not have permission to access this resource", request);
+
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
   }
 
   /**

@@ -63,8 +63,9 @@ class PropertiesValidationTest {
               assertThat(jwtProperties.expirationMs()).isEqualTo(900000L);
 
               SecurityProperties securityProperties = context.getBean(SecurityProperties.class);
-              assertThat(securityProperties.cookie()).isNotNull();
-              assertThat(securityProperties.cookie().secure()).isFalse();
+              assertThat(securityProperties.cookie())
+                  .isNotNull()
+                  .satisfies(cookie -> assertThat(cookie.secure()).isFalse());
             });
   }
 

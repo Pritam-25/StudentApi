@@ -5,9 +5,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.maityp394.studentapi.dto.request.PatchStudentRequest;
+import com.maityp394.studentapi.dto.request.UpdateResponsibilityRequest;
 import com.maityp394.studentapi.dto.request.UpdateStudentRequest;
 import com.maityp394.studentapi.entity.Responsibility;
 import com.maityp394.studentapi.entity.Student;
+import java.util.List;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpEntity;
@@ -195,12 +198,15 @@ class StudentIntegrationTest extends BaseIntegrationTest {
 
   @Test
   @DisplayName(
-      "DELETE /students/{id} - Should return 404 Not Found when deleting non-existent student")
+      "DELETE /students/{id} - Should return 404 Not Found when deleting non-existent student owned by caller")
   void shouldReturnNotFoundWhenDeletingNonExistentStudent() {
-    Student caller = createDefaultStudent();
-    String token = createAccessToken(caller);
+    UUID nonExistentId = UUID.fromString("00000000-0000-0000-0000-000000000000");
+    Student phantom = new Student();
+    phantom.setId(nonExistentId);
+    phantom.setEmail("phantom@example.com");
+    phantom.setResponsibility(Responsibility.STUDENT);
+    String token = createAccessToken(phantom);
     HttpHeaders headers = createBearerHeaders(token);
-    String nonExistentId = "00000000-0000-0000-0000-000000000000";
 
     ResponseEntity<String> deleteResponse =
         testRestTemplate.exchange(
@@ -214,7 +220,255 @@ class StudentIntegrationTest extends BaseIntegrationTest {
     assertThat((Integer) documentContext.read("$.status")).isEqualTo(404);
     assertThat((String) documentContext.read("$.code")).isEqualTo("STUDENT_NOT_FOUND");
     assertThat((String) documentContext.read("$.title")).isEqualTo("Student Not Found");
-    assertThat((String) documentContext.read("$.detail")).contains(nonExistentId);
+    assertThat((String) documentContext.read("$.detail")).contains(nonExistentId.toString());
     assertThat((String) documentContext.read("$.timestamp")).isNotBlank();
+  }
+
+  @Test
+  @DisplayName(
+      "PUT /students/{id} - Should return 403 Forbidden when caller attempts to update another student")
+  void shouldReturnForbiddenWhenUpdatingAnotherStudent() {
+    Student studentA =
+        createTestStudent(
+            "Student A", "studentA@example.com", "Secret123!", Responsibility.STUDENT);
+    Student studentB =
+        createTestStudent(
+            "Student B", "studentB@example.com", "Secret123!", Responsibility.STUDENT);
+    String tokenA = createAccessToken(studentA);
+
+    UpdateStudentRequest updateRequest =
+        new UpdateStudentRequest("Hacked Name", "hacked@example.com");
+    HttpHeaders headers = createBearerHeaders(tokenA);
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    HttpEntity<UpdateStudentRequest> entity = new HttpEntity<>(updateRequest, headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange(
+            "/api/v1/students/" + studentB.getId(), HttpMethod.PUT, entity, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((Integer) documentContext.read("$.status")).isEqualTo(403);
+    assertThat((String) documentContext.read("$.code")).isEqualTo("FORBIDDEN");
+  }
+
+  @Test
+  @DisplayName(
+      "PATCH /students/{id} - Should return 403 Forbidden when caller attempts to patch another student")
+  void shouldReturnForbiddenWhenPatchingAnotherStudent() {
+    Student studentA =
+        createTestStudent(
+            "Student A", "studentA.patch@example.com", "Secret123!", Responsibility.STUDENT);
+    Student studentB =
+        createTestStudent(
+            "Student B", "studentB.patch@example.com", "Secret123!", Responsibility.STUDENT);
+    String tokenA = createAccessToken(studentA);
+
+    PatchStudentRequest patchRequest = new PatchStudentRequest("Hacked Name", null);
+    HttpHeaders headers = createBearerHeaders(tokenA);
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    HttpEntity<PatchStudentRequest> entity = new HttpEntity<>(patchRequest, headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange(
+            "/api/v1/students/" + studentB.getId(), HttpMethod.PATCH, entity, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((Integer) documentContext.read("$.status")).isEqualTo(403);
+    assertThat((String) documentContext.read("$.code")).isEqualTo("FORBIDDEN");
+  }
+
+  @Test
+  @DisplayName(
+      "DELETE /students/{id} - Should return 403 Forbidden when caller attempts to delete another student")
+  void shouldReturnForbiddenWhenDeletingAnotherStudent() {
+    Student studentA =
+        createTestStudent(
+            "Student A", "studentA.del@example.com", "Secret123!", Responsibility.STUDENT);
+    Student studentB =
+        createTestStudent(
+            "Student B", "studentB.del@example.com", "Secret123!", Responsibility.STUDENT);
+    String tokenA = createAccessToken(studentA);
+    HttpHeaders headers = createBearerHeaders(tokenA);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange(
+            "/api/v1/students/" + studentB.getId(),
+            HttpMethod.DELETE,
+            new HttpEntity<>(headers),
+            String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((Integer) documentContext.read("$.status")).isEqualTo(403);
+    assertThat((String) documentContext.read("$.code")).isEqualTo("FORBIDDEN");
+  }
+
+  @Test
+  @DisplayName(
+      "GET /students - Should return 403 Forbidden when standard STUDENT attempts to list all students")
+  void shouldReturnForbiddenWhenStudentListsAllStudents() {
+    Student student = createDefaultStudent();
+    String token = createAccessToken(student);
+    HttpHeaders headers = createBearerHeaders(token);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange(
+            "/api/v1/students", HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((Integer) documentContext.read("$.status")).isEqualTo(403);
+    assertThat((String) documentContext.read("$.code")).isEqualTo("FORBIDDEN");
+  }
+
+  @Test
+  @DisplayName(
+      "GET /students - Should return 200 OK with student roster when caller is CLASS_REPRESENTATIVE")
+  void shouldReturnStudentsListWhenCallerIsClassRepresentative() {
+    Student cr = createClassRepresentative();
+    createTestStudent("Student One", "s1@example.com", "Secret123!", Responsibility.STUDENT);
+    createTestStudent("Student Two", "s2@example.com", "Secret123!", Responsibility.STUDENT);
+
+    String token = createAccessToken(cr);
+    HttpHeaders headers = createBearerHeaders(token);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange(
+            "/api/v1/students", HttpMethod.GET, new HttpEntity<>(headers), String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.message"))
+        .isEqualTo("Students fetched successfully");
+    List<?> students = documentContext.read("$.data");
+    assertThat(students).hasSize(3);
+    assertThat((String) documentContext.read("$.data[0].createdAt")).isNotBlank();
+    assertThat((String) documentContext.read("$.data[0].updatedAt")).isNotBlank();
+  }
+
+  @Test
+  @DisplayName("GET /students - Should filter students by responsibility")
+  void shouldFilterStudentsByResponsibility() {
+    Student cr = createClassRepresentative();
+    createTestStudent("Student Alpha", "alpha@example.com", "Secret123!", Responsibility.STUDENT);
+    createTestStudent("Student Beta", "beta@example.com", "Secret123!", Responsibility.STUDENT);
+
+    String token = createAccessToken(cr);
+    HttpHeaders headers = createBearerHeaders(token);
+
+    // Filter by STUDENT
+    ResponseEntity<String> studentFilterResponse =
+        testRestTemplate.exchange(
+            "/api/v1/students?responsibility=STUDENT",
+            HttpMethod.GET,
+            new HttpEntity<>(headers),
+            String.class);
+
+    assertThat(studentFilterResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+    DocumentContext studentJson = JsonPath.parse(studentFilterResponse.getBody());
+    List<String> studentRoles = studentJson.read("$.data[*].responsibility");
+    assertThat(studentRoles).containsOnly("STUDENT").hasSize(2);
+
+    // Filter by CLASS_REPRESENTATIVE
+    ResponseEntity<String> crFilterResponse =
+        testRestTemplate.exchange(
+            "/api/v1/students?responsibility=CLASS_REPRESENTATIVE",
+            HttpMethod.GET,
+            new HttpEntity<>(headers),
+            String.class);
+
+    assertThat(crFilterResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+    DocumentContext crJson = JsonPath.parse(crFilterResponse.getBody());
+    List<String> crRoles = crJson.read("$.data[*].responsibility");
+    assertThat(crRoles).containsOnly("CLASS_REPRESENTATIVE").hasSize(1);
+  }
+
+  @Test
+  @DisplayName("GET /students - Should sort students by createdAt descending")
+  void shouldSortStudentsByCreatedAtDescending() {
+    Student cr = createClassRepresentative();
+    createTestStudent("First Added", "first@example.com", "Secret123!", Responsibility.STUDENT);
+    createTestStudent("Second Added", "second@example.com", "Secret123!", Responsibility.STUDENT);
+
+    String token = createAccessToken(cr);
+    HttpHeaders headers = createBearerHeaders(token);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange(
+            "/api/v1/students?sort=createdAt,desc",
+            HttpMethod.GET,
+            new HttpEntity<>(headers),
+            String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    DocumentContext json = JsonPath.parse(response.getBody());
+    List<String> createdTimestamps = json.read("$.data[*].createdAt");
+    assertThat(createdTimestamps).hasSize(3);
+    // Verify non-null and non-blank
+    assertThat(createdTimestamps).allSatisfy(ts -> assertThat(ts).isNotBlank());
+  }
+
+  @Test
+  @DisplayName(
+      "PATCH /students/{id}/responsibility - Should allow CLASS_REPRESENTATIVE to update student responsibility")
+  void shouldAllowClassRepresentativeToUpdateResponsibility() {
+    Student cr = createClassRepresentative();
+    Student student = createDefaultStudent();
+
+    String token = createAccessToken(cr);
+    HttpHeaders headers = createBearerHeaders(token);
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    UpdateResponsibilityRequest request =
+        new UpdateResponsibilityRequest(Responsibility.CLASS_REPRESENTATIVE);
+    HttpEntity<UpdateResponsibilityRequest> entity = new HttpEntity<>(request, headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange(
+            "/api/v1/students/" + student.getId() + "/responsibility",
+            HttpMethod.PATCH,
+            entity,
+            String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.message"))
+        .isEqualTo("Student responsibility updated successfully");
+    assertThat((String) documentContext.read("$.data.responsibility"))
+        .isEqualTo("CLASS_REPRESENTATIVE");
+
+    Student updated = studentRepository.findById(student.getId()).orElseThrow();
+    assertThat(updated.getResponsibility()).isEqualTo(Responsibility.CLASS_REPRESENTATIVE);
+  }
+
+  @Test
+  @DisplayName(
+      "PATCH /students/{id}/responsibility - Should return 403 Forbidden when standard STUDENT attempts to update responsibility")
+  void shouldReturnForbiddenWhenStudentAttemptsToUpdateResponsibility() {
+    Student caller = createDefaultStudent();
+    Student target =
+        createTestStudent("Target", "target@example.com", "Secret123!", Responsibility.STUDENT);
+
+    String token = createAccessToken(caller);
+    HttpHeaders headers = createBearerHeaders(token);
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    UpdateResponsibilityRequest request =
+        new UpdateResponsibilityRequest(Responsibility.CLASS_REPRESENTATIVE);
+    HttpEntity<UpdateResponsibilityRequest> entity = new HttpEntity<>(request, headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange(
+            "/api/v1/students/" + target.getId() + "/responsibility",
+            HttpMethod.PATCH,
+            entity,
+            String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((Integer) documentContext.read("$.status")).isEqualTo(403);
+    assertThat((String) documentContext.read("$.code")).isEqualTo("FORBIDDEN");
   }
 }

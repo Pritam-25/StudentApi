@@ -10,12 +10,13 @@ import java.util.UUID;
 public interface AuthService {
 
   /**
-   * Registers a new student account using the provided student creation payload.
+   * Registers a new student account, establishes an authenticated session, and returns an auth
+   * result.
    *
    * @param request the registration details
-   * @return the registered student response
+   * @return an {@link AuthResult} containing student information and token metadata
    */
-  StudentResponse register(RegisterRequest request);
+  AuthResult register(RegisterRequest request);
 
   /**
    * Authenticates student credentials and issues a signed JWT access token.

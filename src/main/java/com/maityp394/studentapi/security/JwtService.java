@@ -37,7 +37,7 @@ public class JwtService {
             .id(UUID.randomUUID().toString())
             .subject(student.getId().toString())
             .claim("email", student.getEmail())
-            .claim("authorities", List.of("ROLE_" + student.getResponsibility().name()))
+            .claim("authorities", List.of(student.getResponsibility().toAuthority()))
             .issuedAt(now)
             .expiresAt(now.plusMillis(jwtProperties.expirationMs()))
             .build();

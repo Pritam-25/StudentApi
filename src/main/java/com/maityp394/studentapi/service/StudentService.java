@@ -3,6 +3,7 @@ package com.maityp394.studentapi.service;
 import com.maityp394.studentapi.dto.request.PatchStudentRequest;
 import com.maityp394.studentapi.dto.request.UpdateStudentRequest;
 import com.maityp394.studentapi.dto.response.StudentResponse;
+import com.maityp394.studentapi.entity.Responsibility;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
@@ -21,12 +22,13 @@ public interface StudentService {
   StudentResponse getStudentById(UUID id);
 
   /**
-   * Retrieves a paginated and sorted list of students.
+   * Retrieves a paginated and sorted list of students, optionally filtered by responsibility.
    *
+   * @param responsibility optional responsibility filter (if null, returns all students)
    * @param pageable pagination and sorting parameters
    * @return a list of {@link StudentResponse} items for the requested page
    */
-  List<StudentResponse> getAllStudents(Pageable pageable);
+  List<StudentResponse> getAllStudents(Responsibility responsibility, Pageable pageable);
 
   /**
    * Fully replaces an existing student's details.
@@ -56,4 +58,15 @@ public interface StudentService {
    * @param id the unique ID of the student to delete
    */
   void deleteStudent(UUID id);
+
+  /**
+   * Updates a student's institutional responsibility/role.
+   *
+   * @param id the unique ID of the student
+   * @param responsibility the new responsibility role to assign
+   * @return the updated {@link StudentResponse}
+   * @throws com.maityp394.studentapi.exception.ResourceNotFoundException if no student exists with
+   *     the given ID
+   */
+  StudentResponse updateResponsibility(UUID id, Responsibility responsibility);
 }

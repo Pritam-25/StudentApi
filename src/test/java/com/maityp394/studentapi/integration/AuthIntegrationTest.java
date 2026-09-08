@@ -6,7 +6,9 @@ import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.maityp394.studentapi.dto.request.LoginRequest;
 import com.maityp394.studentapi.dto.request.RegisterRequest;
+import com.maityp394.studentapi.entity.Responsibility;
 import com.maityp394.studentapi.entity.Student;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,17 +32,71 @@ class AuthIntegrationTest extends BaseIntegrationTest {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
     assertThat(response.getHeaders().getLocation()).isNotNull();
+    assertThat(response.getHeaders().get(HttpHeaders.SET_COOKIE))
+        .isNotNull()
+        .anyMatch(cookie -> cookie.contains("access_token=") && cookie.contains("HttpOnly"));
 
     DocumentContext documentContext = JsonPath.parse(response.getBody());
     assertThat((String) documentContext.read("$.message")).isEqualTo("Registration successful");
     assertThat((String) documentContext.read("$.data.name")).isEqualTo("New Student");
     assertThat((String) documentContext.read("$.data.email")).isEqualTo("new.student@example.com");
+    assertThat((String) documentContext.read("$.data.responsibility")).isEqualTo("STUDENT");
     String id = documentContext.read("$.data.id");
     assertThat(id).isNotBlank();
+    assertThat((String) documentContext.read("$.data.createdAt")).isNotNull();
+    assertThat((String) documentContext.read("$.data.updatedAt")).isNotNull();
 
     Student saved = studentRepository.findByEmail("new.student@example.com").orElseThrow();
-    assertThat(saved.getPasswordHash()).startsWith("$2a$");
-    assertThat(passwordEncoder.matches("Secret123!", saved.getPasswordHash())).isTrue();
+    assertThat(saved.getResponsibility()).isEqualTo(Responsibility.STUDENT);
+    assertThat(saved.getPasswordHash())
+        .startsWith("$2a$")
+        .satisfies(hash -> assertThat(passwordEncoder.matches("Secret123!", hash)).isTrue());
+  }
+
+  @Test
+  @DisplayName("POST /register - Should register new student with default STUDENT responsibility")
+  void shouldRegisterStudentWithDefaultResponsibility() {
+    RegisterRequest registerRequest =
+        new RegisterRequest("Default Student", "default.student@example.com", "Secret123!");
+
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/register", registerRequest, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.data.responsibility")).isEqualTo("STUDENT");
+
+    Student saved = studentRepository.findByEmail("default.student@example.com").orElseThrow();
+    assertThat(saved.getResponsibility()).isEqualTo(Responsibility.STUDENT);
+  }
+
+  @Test
+  @DisplayName(
+      "POST /register - Should auto-login newly registered user and allow immediate authenticated access")
+  void shouldAutoLoginOnRegistrationAndAllowImmediateAccess() {
+    RegisterRequest registerRequest =
+        new RegisterRequest("Auto Login User", "autologin@example.com", "Secret123!");
+
+    ResponseEntity<String> regResponse =
+        testRestTemplate.postForEntity("/api/v1/auth/register", registerRequest, String.class);
+
+    assertThat(regResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    List<String> cookies = regResponse.getHeaders().get(HttpHeaders.SET_COOKIE);
+    assertThat(cookies).isNotNull();
+    String accessTokenCookie =
+        cookies.stream().filter(c -> c.startsWith("access_token=")).findFirst().orElseThrow();
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.COOKIE, accessTokenCookie);
+    HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+    ResponseEntity<String> meResponse =
+        testRestTemplate.exchange("/api/v1/auth/me", HttpMethod.GET, requestEntity, String.class);
+
+    assertThat(meResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+    DocumentContext doc = JsonPath.parse(meResponse.getBody());
+    assertThat((String) doc.read("$.data.email")).isEqualTo("autologin@example.com");
+    assertThat((String) doc.read("$.data.name")).isEqualTo("Auto Login User");
   }
 
   @Test
@@ -83,6 +139,71 @@ class AuthIntegrationTest extends BaseIntegrationTest {
   }
 
   @Test
+  @DisplayName(
+      "POST /register - Should return 400 Bad Request when password lacks uppercase letter")
+  void shouldRejectRegistrationWhenPasswordLacksUppercaseLetter() {
+    RegisterRequest request =
+        new RegisterRequest("No Uppercase", "no.upper@example.com", "secret123!");
+
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/register", request, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    DocumentContext json = JsonPath.parse(response.getBody());
+    assertThat((String) json.read("$.code")).isEqualTo("VALIDATION_FAILED");
+    assertThat((String) json.read("$.errors.password"))
+        .contains("Password must contain at least one uppercase letter");
+  }
+
+  @Test
+  @DisplayName(
+      "POST /register - Should return 400 Bad Request when password lacks special character")
+  void shouldRejectRegistrationWhenPasswordLacksSpecialCharacter() {
+    RegisterRequest request =
+        new RegisterRequest("No Special", "no.special@example.com", "Secret1234");
+
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/register", request, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    DocumentContext json = JsonPath.parse(response.getBody());
+    assertThat((String) json.read("$.code")).isEqualTo("VALIDATION_FAILED");
+    assertThat((String) json.read("$.errors.password"))
+        .contains("Password must contain at least one special character");
+  }
+
+  @Test
+  @DisplayName("POST /register - Should return 400 Bad Request when password lacks number")
+  void shouldRejectRegistrationWhenPasswordLacksNumber() {
+    RegisterRequest request =
+        new RegisterRequest("No Number", "no.number@example.com", "SecretSpecial!");
+
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/register", request, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    DocumentContext json = JsonPath.parse(response.getBody());
+    assertThat((String) json.read("$.code")).isEqualTo("VALIDATION_FAILED");
+    assertThat((String) json.read("$.errors.password"))
+        .contains("Password must contain at least one number");
+  }
+
+  @Test
+  @DisplayName("POST /register - Should return 400 Bad Request when password is under 8 characters")
+  void shouldRejectRegistrationWhenPasswordIsTooShort() {
+    RegisterRequest request = new RegisterRequest("Too Short", "too.short@example.com", "Sec1!");
+
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/register", request, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    DocumentContext json = JsonPath.parse(response.getBody());
+    assertThat((String) json.read("$.code")).isEqualTo("VALIDATION_FAILED");
+    assertThat((String) json.read("$.errors.password"))
+        .contains("Password must be between 8 and 30 characters");
+  }
+
+  @Test
   @DisplayName("POST /register - Should hash student password using BCrypt upon registration")
   void shouldHashPasswordWhenCreatingStudent() {
     String rawPassword = "MySecurePassword123!";
@@ -97,8 +218,10 @@ class AuthIntegrationTest extends BaseIntegrationTest {
     UUID id = UUID.fromString(idStr);
 
     Student saved = studentRepository.findById(id).orElseThrow();
-    assertThat(saved.getPasswordHash()).isNotEqualTo(rawPassword).startsWith("$2a$");
-    assertThat(passwordEncoder.matches(rawPassword, saved.getPasswordHash())).isTrue();
+    assertThat(saved.getPasswordHash())
+        .isNotEqualTo(rawPassword)
+        .startsWith("$2a$")
+        .satisfies(hash -> assertThat(passwordEncoder.matches(rawPassword, hash)).isTrue());
   }
 
   @Test
@@ -175,5 +298,41 @@ class AuthIntegrationTest extends BaseIntegrationTest {
         .contains("access_token=")
         .contains("Max-Age=0")
         .contains("HttpOnly");
+  }
+
+  @Test
+  @DisplayName("POST /register - Should trim whitespace from name and normalize email to lowercase")
+  void shouldNormalizeInputDuringRegistrationAndLogin() {
+    RegisterRequest registerRequest =
+        new RegisterRequest("  Trimmed Name  ", "  Trimmed.Email@EXAMPLE.Com  ", "Secret123!");
+
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/register", registerRequest, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.data.name")).isEqualTo("Trimmed Name");
+    assertThat((String) documentContext.read("$.data.email"))
+        .isEqualTo("trimmed.email@example.com");
+
+    // Login with mixed case & untrimmed email should succeed
+    LoginRequest loginRequest = new LoginRequest("   TRIMMED.EMAIL@example.COM  ", "Secret123!");
+    ResponseEntity<String> loginResponse =
+        testRestTemplate.postForEntity("/api/v1/auth/login", loginRequest, String.class);
+    assertThat(loginResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+  }
+
+  @Test
+  @DisplayName("POST /register - Should reject whitespace-only name with 400 Bad Request")
+  void shouldRejectWhitespaceOnlyName() {
+    RegisterRequest request = new RegisterRequest("     ", "whitespace@example.com", "Secret123!");
+
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/register", request, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.code")).isEqualTo("VALIDATION_FAILED");
+    assertThat((Object) documentContext.read("$.errors.name")).isNotNull();
   }
 }

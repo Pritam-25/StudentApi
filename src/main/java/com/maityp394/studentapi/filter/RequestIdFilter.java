@@ -23,14 +23,19 @@ public class RequestIdFilter extends OncePerRequestFilter {
   public static final String REQUEST_ID_ATTRIBUTE = "requestId";
   public static final String MDC_REQUEST_ID = "requestId";
 
+  private static final java.util.regex.Pattern SAFE_REQUEST_ID_PATTERN =
+      java.util.regex.Pattern.compile("^[a-zA-Z0-9_-]{1,64}$");
+
   @Override
   protected void doFilterInternal(
       HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
       throws ServletException, IOException {
 
     String requestId = request.getHeader(REQUEST_ID_HEADER);
-    if (requestId == null || requestId.isBlank()) {
+    if (requestId == null || !SAFE_REQUEST_ID_PATTERN.matcher(requestId.trim()).matches()) {
       requestId = UUID.randomUUID().toString();
+    } else {
+      requestId = requestId.trim();
     }
 
     request.setAttribute(REQUEST_ID_ATTRIBUTE, requestId);

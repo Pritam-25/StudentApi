@@ -33,19 +33,24 @@ public class AuthController {
   private final SecurityProperties securityProperties;
 
   /**
-   * Registers a new student account using the standard student creation payload.
+   * Registers a new student account, establishes an authenticated session with an HttpOnly
+   * access_token cookie, and returns student details.
    *
    * @param request the registration request payload
    * @param ucb URI components builder to construct the location header
-   * @return HTTP 201 Created with student details
+   * @return HTTP 201 Created with student details and Set-Cookie header
    */
   @PostMapping("/register")
   public ResponseEntity<ApiResponse<StudentResponse>> register(
       @Valid @RequestBody RegisterRequest request, UriComponentsBuilder ucb) {
-    StudentResponse response = authService.register(request);
-    URI location = ucb.path("/api/v1/students/{id}").buildAndExpand(response.getId()).toUri();
+    AuthResult result = authService.register(request);
+    URI location =
+        ucb.path("/api/v1/students/{id}").buildAndExpand(result.student().getId()).toUri();
+    ResponseCookie cookie = buildAccessTokenCookie(result);
+
     return ResponseEntity.created(location)
-        .body(new ApiResponse<>("Registration successful", response));
+        .header(HttpHeaders.SET_COOKIE, cookie.toString())
+        .body(new ApiResponse<>("Registration successful", result.student()));
   }
 
   /**
@@ -59,19 +64,21 @@ public class AuthController {
   public ResponseEntity<ApiResponse<StudentResponse>> login(
       @Valid @RequestBody LoginRequest request) {
     AuthResult result = authService.login(request);
-
-    ResponseCookie cookie =
-        ResponseCookie.from("access_token", result.accessToken())
-            .httpOnly(true)
-            .secure(securityProperties.cookie().secure())
-            .path("/")
-            .maxAge(result.expiresIn())
-            .sameSite("Lax")
-            .build();
+    ResponseCookie cookie = buildAccessTokenCookie(result);
 
     return ResponseEntity.ok()
         .header(HttpHeaders.SET_COOKIE, cookie.toString())
         .body(new ApiResponse<>("Login successful", result.student()));
+  }
+
+  private ResponseCookie buildAccessTokenCookie(AuthResult result) {
+    return ResponseCookie.from("access_token", result.accessToken())
+        .httpOnly(true)
+        .secure(securityProperties.cookie().secure())
+        .path("/")
+        .maxAge(result.expiresIn())
+        .sameSite("Lax")
+        .build();
   }
 
   /**

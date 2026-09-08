@@ -11,6 +11,7 @@ import com.maityp394.studentapi.exception.ResourceNotFoundException;
 import com.maityp394.studentapi.mapper.StudentMapper;
 import com.maityp394.studentapi.repository.StudentRepository;
 import com.maityp394.studentapi.security.JwtService;
+import com.maityp394.studentapi.security.StudentPrincipal;
 import com.maityp394.studentapi.service.AuthService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -40,38 +41,35 @@ public class AuthServiceImpl implements AuthService {
 
   /** {@inheritDoc} */
   @Override
-  public StudentResponse register(RegisterRequest request) {
-    if (studentRepository.existsByEmail(request.email().trim().toLowerCase())) {
+  public AuthResult register(RegisterRequest request) {
+    if (studentRepository.existsByEmail(request.email())) {
       throw new DuplicateResourceException(ErrorCode.STUDENT_EMAIL_ALREADY_EXISTS);
     }
 
     String passwordHash = passwordEncoder.encode(request.password());
     Student student = studentMapper.toEntity(request, passwordHash);
-    Student saved = studentRepository.save(student);
+    Student saved = studentRepository.saveAndFlush(student);
 
-    log.info("Student registerd successfully: id={}", saved.getId());
-    return studentMapper.toResponse(saved);
+    log.info("Student registered successfully: id={}", saved.getId());
+    String token = jwtService.generateAccessToken(saved);
+    StudentResponse studentResponse = studentMapper.toResponse(saved);
+    return new AuthResult(studentResponse, token, jwtService.getExpirationSeconds());
   }
 
   /** {@inheritDoc} */
   @Override
   public AuthResult login(LoginRequest request) {
-    String email = request.email().trim().toLowerCase();
-
     Authentication authenticationRequest =
-        UsernamePasswordAuthenticationToken.unauthenticated(email, request.password());
+        UsernamePasswordAuthenticationToken.unauthenticated(request.email(), request.password());
 
-    authenticationManager.authenticate(authenticationRequest);
-
-    Student student =
-        studentRepository
-            .findByEmail(email)
-            .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.STUDENT_NOT_FOUND));
+    Authentication authResult = authenticationManager.authenticate(authenticationRequest);
+    StudentPrincipal principal = (StudentPrincipal) authResult.getPrincipal();
+    Student student = principal.student();
 
     String token = jwtService.generateAccessToken(student);
     StudentResponse studentResponse = studentMapper.toResponse(student);
 
-    log.info("Student Loged in successfully.");
+    log.info("Student Logged in successfully as {}", studentResponse.getResponsibility());
     return new AuthResult(studentResponse, token, jwtService.getExpirationSeconds());
   }
 
