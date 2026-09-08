@@ -75,7 +75,13 @@ d:/REST_API/
 
 ### Configuration (`.env`)
 
-Create a `.env` file in the project root directory (or configure environment variables in your system):
+For local development, copy the provided `.env.example` template to `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Customize the values in `.env`:
 
 ```properties
 # Database connection string
@@ -83,7 +89,12 @@ DATABASE_URL=jdbc:postgresql://<host>:<port>/<dbname>?user=<username>&password=<
 
 # 256-bit Base64-encoded secret key for signing JWTs
 JWT_SECRET=your-base64-encoded-256-bit-secret-key-here
+
+# Active Spring Profile (dev for local development)
+SPRING_PROFILES_ACTIVE=dev
 ```
+
+For production deployments, consult [.env.production](.env.production) and configure the environment variables in your deployment platform (Render, Railway, AWS, Docker, Kubernetes) with `SPRING_PROFILES_ACTIVE=prod`.
 
 > **Note**: To generate a valid 256-bit Base64 secret key:
 >

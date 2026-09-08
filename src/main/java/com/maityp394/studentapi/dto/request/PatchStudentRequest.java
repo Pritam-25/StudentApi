@@ -2,6 +2,7 @@ package com.maityp394.studentapi.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
+import java.util.Locale;
 
 /**
  * Data transfer object representing the payload for partially updating a student. Any non-null
@@ -14,6 +15,6 @@ public record PatchStudentRequest(@Size(min = 2, max = 30) String name, @Email S
 
   public PatchStudentRequest {
     name = name != null ? name.strip() : null;
-    email = email != null ? email.strip().toLowerCase() : null;
+    email = email != null ? email.strip().toLowerCase(Locale.ROOT) : null;
   }
 }

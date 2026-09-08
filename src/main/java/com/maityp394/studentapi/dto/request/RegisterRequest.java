@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import java.util.Locale;
 
 /**
  * Data transfer object representing the payload for registering a new student.
@@ -27,6 +28,6 @@ public record RegisterRequest(
 
   public RegisterRequest {
     name = name != null ? name.strip() : null;
-    email = email != null ? email.strip().toLowerCase() : null;
+    email = email != null ? email.strip().toLowerCase(Locale.ROOT) : null;
   }
 }

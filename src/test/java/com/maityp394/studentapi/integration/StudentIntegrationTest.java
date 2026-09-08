@@ -471,4 +471,54 @@ class StudentIntegrationTest extends BaseIntegrationTest {
     assertThat((Integer) documentContext.read("$.status")).isEqualTo(403);
     assertThat((String) documentContext.read("$.code")).isEqualTo("FORBIDDEN");
   }
+
+  @Test
+  @DisplayName(
+      "PATCH /students/{id}/responsibility - Demoting a CLASS_REPRESENTATIVE immediately invalidates their elevated access")
+  void shouldImmediatelyInvalidateElevatedAccessWhenClassRepresentativeIsDemoted() {
+    Student admin = createClassRepresentative();
+    Student targetRep =
+        createTestStudent(
+            "Target Rep",
+            "target.rep@example.com",
+            "Password123!",
+            Responsibility.CLASS_REPRESENTATIVE);
+
+    // 1. Issue access token while targetRep is CLASS_REPRESENTATIVE
+    String targetRepToken = createAccessToken(targetRep);
+    HttpHeaders targetRepHeaders = createBearerHeaders(targetRepToken);
+
+    // 2. Target rep initially has access to CR-only endpoint (GET /students)
+    ResponseEntity<String> initialResponse =
+        testRestTemplate.exchange(
+            "/api/v1/students", HttpMethod.GET, new HttpEntity<>(targetRepHeaders), String.class);
+    assertThat(initialResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    // 3. Admin demotes targetRep to standard STUDENT
+    String adminToken = createAccessToken(admin);
+    HttpHeaders adminHeaders = createBearerHeaders(adminToken);
+    adminHeaders.setContentType(MediaType.APPLICATION_JSON);
+    UpdateResponsibilityRequest demoteRequest =
+        new UpdateResponsibilityRequest(Responsibility.STUDENT);
+    HttpEntity<UpdateResponsibilityRequest> demoteEntity =
+        new HttpEntity<>(demoteRequest, adminHeaders);
+
+    ResponseEntity<String> demoteResponse =
+        testRestTemplate.exchange(
+            "/api/v1/students/" + targetRep.getId() + "/responsibility",
+            HttpMethod.PATCH,
+            demoteEntity,
+            String.class);
+    assertThat(demoteResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    // 4. Target rep re-attempts access using their previously issued JWT token
+    ResponseEntity<String> subsequentResponse =
+        testRestTemplate.exchange(
+            "/api/v1/students", HttpMethod.GET, new HttpEntity<>(targetRepHeaders), String.class);
+
+    // Access must immediately be denied with 403 Forbidden because current DB role is resolved
+    assertThat(subsequentResponse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    DocumentContext documentContext = JsonPath.parse(subsequentResponse.getBody());
+    assertThat((String) documentContext.read("$.code")).isEqualTo("FORBIDDEN");
+  }
 }

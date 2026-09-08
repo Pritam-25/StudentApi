@@ -18,7 +18,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 /**
  * Configuration class responsible for creating and exposing JWT signing and verification beans.
  *
- * <p>Centralises secret key material so that both the {@link JwtEncoder} and {@link JwtDecoder}
+ * <p>Centralizes secret key material so that both the {@link JwtEncoder} and {@link JwtDecoder}
  * share the same {@link SecretKey} instance. The decoder is configured with issuer and timestamp
  * validators to reject forged or expired tokens based on {@link JwtProperties}.
  */

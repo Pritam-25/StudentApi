@@ -2,11 +2,12 @@ package com.maityp394.studentapi.security;
 
 import com.maityp394.studentapi.config.properties.SecurityProperties;
 import jakarta.servlet.Filter;
-import jakarta.servlet.http.Cookie;
+import java.util.Collection;
 import java.util.List;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
@@ -16,10 +17,11 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
@@ -45,9 +47,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-
-  private static final String BEARER_PREFIX = "Bearer ";
-  private static final String ACCESS_TOKEN_COOKIE = "access_token";
 
   private final RestAuthenticationEntryPoint authenticationEntryPoint;
   private final RestAccessDeniedHandler accessDeniedHandler;
@@ -92,7 +91,8 @@ public class SecurityConfig {
    * @throws BeanInitializationException if an error occurs while building the security filter chain
    */
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+  public SecurityFilterChain securityFilterChain(
+      HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter) {
     try {
       http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
           .csrf(
@@ -121,7 +121,7 @@ public class SecurityConfig {
               oauth2 ->
                   oauth2
                       .bearerTokenResolver(bearerTokenResolver())
-                      .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                      .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
                       .authenticationEntryPoint(authenticationEntryPoint)
                       .accessDeniedHandler(accessDeniedHandler))
           .exceptionHandling(
@@ -141,16 +141,7 @@ public class SecurityConfig {
    * value.
    */
   private boolean hasAccessTokenCookie(jakarta.servlet.http.HttpServletRequest request) {
-    if (request.getCookies() != null) {
-      for (Cookie cookie : request.getCookies()) {
-        if (ACCESS_TOKEN_COOKIE.equals(cookie.getName())
-            && cookie.getValue() != null
-            && !cookie.getValue().isBlank()) {
-          return true;
-        }
-      }
-    }
-    return false;
+    return SecurityConstants.hasAccessTokenCookie(request);
   }
 
   /**
@@ -163,7 +154,7 @@ public class SecurityConfig {
         return false;
       }
       String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-      if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+      if (authHeader != null && authHeader.startsWith(SecurityConstants.BEARER_PREFIX)) {
         return false;
       }
       return !CSRF_EXEMPT_PATHS.matches(request)
@@ -186,14 +177,7 @@ public class SecurityConfig {
       if (token != null) {
         return token;
       }
-      if (request.getCookies() != null) {
-        for (Cookie cookie : request.getCookies()) {
-          if (ACCESS_TOKEN_COOKIE.equals(cookie.getName())) {
-            return cookie.getValue();
-          }
-        }
-      }
-      return null;
+      return SecurityConstants.getAccessTokenFromCookie(request);
     };
   }
 
@@ -243,20 +227,16 @@ public class SecurityConfig {
   }
 
   /**
-   * Configures a {@link JwtAuthenticationConverter} that maps granted authorities from the custom
-   * {@code "authorities"} JWT claim.
+   * Configures a {@link JwtAuthenticationConverter} using the provided authorities' converter.
    *
+   * @param authoritiesConverter the converter used to dynamically resolve authorities
    * @return the configured {@link JwtAuthenticationConverter}
    */
   @Bean
-  public JwtAuthenticationConverter jwtAuthenticationConverter() {
-    JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter =
-        new JwtGrantedAuthoritiesConverter();
-    grantedAuthoritiesConverter.setAuthoritiesClaimName("authorities");
-    grantedAuthoritiesConverter.setAuthorityPrefix("");
-
+  public JwtAuthenticationConverter jwtAuthenticationConverter(
+      Converter<Jwt, Collection<GrantedAuthority>> authoritiesConverter) {
     JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
-    converter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
+    converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
     return converter;
   }
 }

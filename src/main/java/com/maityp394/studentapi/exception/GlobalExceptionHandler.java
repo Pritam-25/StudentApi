@@ -311,7 +311,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
    * returns a sanitized client-facing message ({@code "The request conflicts with existing data."})
    * to prevent leakage of internal database table, column, or constraint names.
    *
-   * @param ex the data integrity violation exception thrown by Spring Data JPA / Hibernate
    * @param request the current {@link HttpServletRequest}
    * @return a {@link ResponseEntity} with HTTP 409 Conflict enclosing a {@code
    *     DATA_INTEGRITY_VIOLATION} {@link ProblemDetail}
@@ -319,8 +318,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
    * @see ErrorCode#DATA_INTEGRITY_VIOLATION
    */
   @ExceptionHandler(DataIntegrityViolationException.class)
-  public ResponseEntity<ProblemDetail> handleDataIntegrityViolation(
-      DataIntegrityViolationException ex, HttpServletRequest request) {
+  public ResponseEntity<ProblemDetail> handleDataIntegrityViolation(HttpServletRequest request) {
 
     log.warn("Database integrity violation occurred");
 
@@ -336,14 +334,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
   /**
    * Intercepts Spring Security bad credentials failures during login authentication.
    *
-   * @param ex the bad credentials exception
    * @param request the current {@link HttpServletRequest}
    * @return a {@link ResponseEntity} with HTTP 401 Unauthorized enclosing an {@code
    *     INVALID_CREDENTIALS} {@link ProblemDetail}
    */
   @ExceptionHandler(BadCredentialsException.class)
-  public ResponseEntity<ProblemDetail> handleBadCredentials(
-      BadCredentialsException ex, HttpServletRequest request) {
+  public ResponseEntity<ProblemDetail> handleBadCredentials(HttpServletRequest request) {
 
     log.debug("Bad credentials authentication failure");
 

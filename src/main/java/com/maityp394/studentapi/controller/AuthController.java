@@ -6,9 +6,11 @@ import com.maityp394.studentapi.dto.request.RegisterRequest;
 import com.maityp394.studentapi.dto.response.ApiResponse;
 import com.maityp394.studentapi.dto.response.AuthResult;
 import com.maityp394.studentapi.dto.response.StudentResponse;
+import com.maityp394.studentapi.security.SecurityConstants;
 import com.maityp394.studentapi.service.AuthService;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -44,8 +46,7 @@ public class AuthController {
   public ResponseEntity<ApiResponse<StudentResponse>> register(
       @Valid @RequestBody RegisterRequest request, UriComponentsBuilder ucb) {
     AuthResult result = authService.register(request);
-    URI location =
-        ucb.path("/api/v1/students/{id}").buildAndExpand(result.student().getId()).toUri();
+    URI location = ucb.path("/api/v1/students/{id}").buildAndExpand(result.student().id()).toUri();
     ResponseCookie cookie = buildAccessTokenCookie(result);
 
     return ResponseEntity.created(location)
@@ -72,7 +73,7 @@ public class AuthController {
   }
 
   private ResponseCookie buildAccessTokenCookie(AuthResult result) {
-    return ResponseCookie.from("access_token", result.accessToken())
+    return ResponseCookie.from(SecurityConstants.ACCESS_TOKEN_COOKIE, result.accessToken())
         .httpOnly(true)
         .secure(securityProperties.cookie().secure())
         .path("/")
@@ -89,7 +90,8 @@ public class AuthController {
    */
   @GetMapping("/me")
   public ResponseEntity<ApiResponse<StudentResponse>> me(@AuthenticationPrincipal Jwt jwt) {
-    StudentResponse response = authService.getCurrentUser(UUID.fromString(jwt.getSubject()));
+    UUID userId = UUID.fromString(Objects.requireNonNull(jwt.getSubject()));
+    StudentResponse response = authService.getCurrentUser(userId);
     return ResponseEntity.ok(new ApiResponse<>("User fetched successfully", response));
   }
 
@@ -102,7 +104,7 @@ public class AuthController {
   public ResponseEntity<ApiResponse<Void>> logout() {
 
     ResponseCookie cleanupCookie =
-        ResponseCookie.from("access_token", "")
+        ResponseCookie.from(SecurityConstants.ACCESS_TOKEN_COOKIE, "")
             .httpOnly(true)
             .secure(securityProperties.cookie().secure())
             .path("/")

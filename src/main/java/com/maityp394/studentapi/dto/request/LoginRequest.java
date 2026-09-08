@@ -2,6 +2,7 @@ package com.maityp394.studentapi.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import java.util.Locale;
 
 /**
  * Payload for student authentication (login).
@@ -14,6 +15,6 @@ public record LoginRequest(
     @NotBlank(message = "Password is required") String password) {
 
   public LoginRequest {
-    email = email != null ? email.strip().toLowerCase() : null;
+    email = email != null ? email.strip().toLowerCase(Locale.ROOT) : null;
   }
 }

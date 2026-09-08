@@ -75,11 +75,10 @@ class PropertiesValidationTest {
     contextRunner
         .withPropertyValues("jwt.secret=")
         .run(
-            context -> {
-              assertThat(context.getStartupFailure())
-                  .isNotNull()
-                  .hasStackTraceContaining("must not be blank");
-            });
+            context ->
+                assertThat(context.getStartupFailure())
+                    .isNotNull()
+                    .hasStackTraceContaining("must not be blank"));
   }
 
   @Test
@@ -88,11 +87,10 @@ class PropertiesValidationTest {
     contextRunner
         .withPropertyValues("jwt.secret=short-key-under-32-chars")
         .run(
-            context -> {
-              assertThat(context.getStartupFailure())
-                  .isNotNull()
-                  .hasStackTraceContaining("must be at least 32 characters");
-            });
+            context ->
+                assertThat(context.getStartupFailure())
+                    .isNotNull()
+                    .hasStackTraceContaining("must be at least 32 characters"));
   }
 
   @Test
@@ -102,32 +100,29 @@ class PropertiesValidationTest {
         .withPropertyValues(
             "jwt.secret=this-is-a-valid-secret-key-with-at-least-32-chars", "jwt.expiration-ms=500")
         .run(
-            context -> {
-              assertThat(context.getStartupFailure())
-                  .isNotNull()
-                  .hasStackTraceContaining("must be at least 1000 ms");
-            });
+            context ->
+                assertThat(context.getStartupFailure())
+                    .isNotNull()
+                    .hasStackTraceContaining("must be at least 1000 ms"));
 
     contextRunner
         .withPropertyValues(
             "jwt.secret=this-is-a-valid-secret-key-with-at-least-32-chars", "jwt.expiration-ms=0")
         .run(
-            context -> {
-              assertThat(context.getStartupFailure())
-                  .isNotNull()
-                  .hasStackTraceContaining("must be at least 1000 ms");
-            });
+            context ->
+                assertThat(context.getStartupFailure())
+                    .isNotNull()
+                    .hasStackTraceContaining("must be at least 1000 ms"));
 
     contextRunner
         .withPropertyValues(
             "jwt.secret=this-is-a-valid-secret-key-with-at-least-32-chars",
             "jwt.expiration-ms=-100")
         .run(
-            context -> {
-              assertThat(context.getStartupFailure())
-                  .isNotNull()
-                  .hasStackTraceContaining("must be at least 1000 ms");
-            });
+            context ->
+                assertThat(context.getStartupFailure())
+                    .isNotNull()
+                    .hasStackTraceContaining("must be at least 1000 ms"));
   }
 
   @Test

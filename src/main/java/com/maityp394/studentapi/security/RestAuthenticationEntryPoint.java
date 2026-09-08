@@ -2,11 +2,11 @@ package com.maityp394.studentapi.security;
 
 import com.maityp394.studentapi.exception.ErrorCode;
 import com.maityp394.studentapi.exception.ProblemDetailFactory;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -30,8 +30,6 @@ import tools.jackson.databind.ObjectMapper;
 @Component
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
-  private static final String BEARER_PREFIX = "Bearer ";
-  private static final String ACCESS_TOKEN_COOKIE = "access_token";
   private static final String INVALID_TOKEN_CHALLENGE =
       "Bearer error=\"invalid_token\", error_description=\"The access token is invalid or expired\"";
   private static final String DEFAULT_BEARER_CHALLENGE = "Bearer";
@@ -44,7 +42,7 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
   @Override
   public void commence(
-      HttpServletRequest request,
+      @NonNull HttpServletRequest request,
       HttpServletResponse response,
       AuthenticationException authException)
       throws IOException {
@@ -86,20 +84,10 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     // Check if the client attempted to supply a token via Bearer header or cookie
     String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-    if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+    if (authHeader != null && authHeader.startsWith(SecurityConstants.BEARER_PREFIX)) {
       return true;
     }
 
-    if (request.getCookies() != null) {
-      for (Cookie cookie : request.getCookies()) {
-        if (ACCESS_TOKEN_COOKIE.equals(cookie.getName())
-            && cookie.getValue() != null
-            && !cookie.getValue().isBlank()) {
-          return true;
-        }
-      }
-    }
-
-    return false;
+    return SecurityConstants.hasAccessTokenCookie(request);
   }
 }

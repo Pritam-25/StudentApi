@@ -3,6 +3,7 @@ package com.maityp394.studentapi.security;
 import com.maityp394.studentapi.entity.Student;
 import com.maityp394.studentapi.repository.StudentRepository;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -28,7 +29,8 @@ public class CustomUserDetailsService implements UserDetailsService {
    */
   @Override
   @Transactional(readOnly = true)
-  public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+  public @NonNull UserDetails loadUserByUsername(@NonNull String email)
+      throws UsernameNotFoundException {
     Student student =
         studentRepository
             .findByEmail(email)

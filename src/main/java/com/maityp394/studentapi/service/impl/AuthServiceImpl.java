@@ -13,6 +13,7 @@ import com.maityp394.studentapi.repository.StudentRepository;
 import com.maityp394.studentapi.security.JwtService;
 import com.maityp394.studentapi.security.StudentPrincipal;
 import com.maityp394.studentapi.service.AuthService;
+import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -64,12 +65,12 @@ public class AuthServiceImpl implements AuthService {
 
     Authentication authResult = authenticationManager.authenticate(authenticationRequest);
     StudentPrincipal principal = (StudentPrincipal) authResult.getPrincipal();
-    Student student = principal.student();
+    Student student = Objects.requireNonNull(principal).student();
 
     String token = jwtService.generateAccessToken(student);
     StudentResponse studentResponse = studentMapper.toResponse(student);
 
-    log.info("Student Logged in successfully as {}", studentResponse.getResponsibility());
+    log.info("Student Logged in successfully as {}", studentResponse.responsibility());
     return new AuthResult(studentResponse, token, jwtService.getExpirationSeconds());
   }
 

@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.NonNull;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
 import org.springframework.security.access.AccessDeniedException;
@@ -33,8 +34,8 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
   @Override
   public void handle(
-      HttpServletRequest request,
-      HttpServletResponse response,
+      @NonNull HttpServletRequest request,
+      @NonNull HttpServletResponse response,
       AccessDeniedException accessDeniedException)
       throws IOException {
 

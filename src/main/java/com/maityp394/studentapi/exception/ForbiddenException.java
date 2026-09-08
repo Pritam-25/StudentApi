@@ -6,10 +6,6 @@ package com.maityp394.studentapi.exception;
  */
 public class ForbiddenException extends ApplicationException {
 
-  public ForbiddenException() {
-    super(ErrorCode.FORBIDDEN);
-  }
-
   public ForbiddenException(String detail) {
     super(ErrorCode.FORBIDDEN, detail);
   }

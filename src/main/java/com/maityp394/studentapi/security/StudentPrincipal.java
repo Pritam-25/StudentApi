@@ -3,6 +3,7 @@ package com.maityp394.studentapi.security;
 import com.maityp394.studentapi.entity.Student;
 import java.util.Collection;
 import java.util.List;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -32,7 +33,7 @@ public record StudentPrincipal(Student student, Collection<? extends GrantedAuth
   }
 
   @Override
-  public Collection<? extends GrantedAuthority> getAuthorities() {
+  public @NonNull Collection<? extends GrantedAuthority> getAuthorities() {
     return this.authorities;
   }
 
@@ -42,7 +43,7 @@ public record StudentPrincipal(Student student, Collection<? extends GrantedAuth
   }
 
   @Override
-  public String getUsername() {
+  public @NonNull String getUsername() {
     return this.student.getEmail();
   }
 }

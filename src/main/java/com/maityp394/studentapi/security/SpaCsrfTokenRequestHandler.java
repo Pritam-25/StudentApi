@@ -3,6 +3,7 @@ package com.maityp394.studentapi.security;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.function.Supplier;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.csrf.CsrfTokenRequestHandler;
@@ -21,7 +22,9 @@ public final class SpaCsrfTokenRequestHandler extends CsrfTokenRequestAttributeH
 
   @Override
   public void handle(
-      HttpServletRequest request, HttpServletResponse response, Supplier<CsrfToken> csrfToken) {
+      @NonNull HttpServletRequest request,
+      @NonNull HttpServletResponse response,
+      @NonNull Supplier<CsrfToken> csrfToken) {
     this.delegate.handle(request, response, csrfToken);
   }
 
