@@ -2,6 +2,7 @@ package com.maityp394.studentapi;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 /**
  * Entry point for the Student API Spring Boot application.
@@ -9,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * <p>Bootstraps the application context, configurations, and embedded servlet container.
  */
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class StudentApiApplication {
 
   /**

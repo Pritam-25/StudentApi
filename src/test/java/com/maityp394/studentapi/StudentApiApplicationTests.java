@@ -348,20 +348,37 @@ class StudentApiApplicationTests {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     DocumentContext documentContext = JsonPath.parse(response.getBody());
     assertThat((String) documentContext.read("$.message")).isEqualTo("Logged out successfully");
+
+    String setCookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
+    assertThat(setCookie).isNotNull();
+    assertThat(setCookie).contains("access_token=");
+    assertThat(setCookie).contains("Max-Age=0");
+    assertThat(setCookie).contains("HttpOnly");
   }
 
   @Test
-  void shouldLoginSuccessfullyAndReturnJwt() {
+  void shouldLoginSuccessfullyAndSetHttpOnlyCookie() {
     LoginRequest loginRequest = new LoginRequest("auth.user@example.com", "Password123!");
     ResponseEntity<String> response =
         testRestTemplate.postForEntity("/api/v1/auth/login", loginRequest, String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    // Verify Set-Cookie header contains HttpOnly, Path=/, SameSite=Lax, and access_token
+    String setCookie = response.getHeaders().getFirst(HttpHeaders.SET_COOKIE);
+    assertThat(setCookie).isNotNull();
+    assertThat(setCookie).contains("access_token=");
+    assertThat(setCookie).contains("HttpOnly");
+    assertThat(setCookie).contains("Path=/");
+    assertThat(setCookie).contains("SameSite=Lax");
+
+    // Verify JSON body contains user details but NO accessToken
     DocumentContext documentContext = JsonPath.parse(response.getBody());
     assertThat((String) documentContext.read("$.message")).isEqualTo("Login successful");
-    assertThat((String) documentContext.read("$.data.tokenType")).isEqualTo("Bearer");
-    assertThat((String) documentContext.read("$.data.accessToken")).isNotBlank();
-    assertThat((Integer) documentContext.read("$.data.expiresIn")).isEqualTo(900);
+    assertThat((String) documentContext.read("$.data.email")).isEqualTo("auth.user@example.com");
+    assertThat((String) documentContext.read("$.data.id"))
+        .isEqualTo(authenticatedStudentId.toString());
+    assertThat(response.getBody()).doesNotContain("accessToken");
   }
 
   @Test
@@ -398,6 +415,12 @@ class StudentApiApplicationTests {
         testRestTemplate.exchange("/api/v1/students", HttpMethod.GET, entity, String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(response.getHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE)).isEqualTo("Bearer");
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.code")).isEqualTo("UNAUTHORIZED");
+    assertThat((String) documentContext.read("$.title")).isEqualTo("Unauthorized");
+    assertThat((String) documentContext.read("$.detail"))
+        .isEqualTo("Authentication is required to access this resource");
   }
 
   @Test
@@ -410,5 +433,115 @@ class StudentApiApplicationTests {
         testRestTemplate.exchange("/api/v1/students", HttpMethod.GET, entity, String.class);
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    assertThat(response.getHeaders().getFirst(HttpHeaders.WWW_AUTHENTICATE))
+        .contains("error=\"invalid_token\"");
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.code")).isEqualTo("INVALID_TOKEN");
+    assertThat((String) documentContext.read("$.title")).isEqualTo("Unauthorized");
+    assertThat((String) documentContext.read("$.detail"))
+        .isEqualTo("The access token is invalid or expired");
+  }
+
+  @Test
+  void shouldAuthenticateUsingHttpOnlyCookieWithoutAuthorizationHeader() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("X-Skip-Auth", "true");
+    headers.add(HttpHeaders.COOKIE, "access_token=" + authToken);
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange("/api/v1/students", HttpMethod.GET, entity, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+  }
+
+  @Test
+  void shouldPrioritizeAuthorizationHeaderOverCookie() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("X-Skip-Auth", "true");
+    headers.setBearerAuth(authToken);
+    headers.add(HttpHeaders.COOKIE, "access_token=invalid.cookie.token");
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange("/api/v1/students", HttpMethod.GET, entity, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+  }
+
+  @Test
+  void shouldRejectStateChangingCookieRequestWithoutCsrfToken() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("X-Skip-Auth", "true");
+    headers.add(HttpHeaders.COOKIE, "access_token=" + authToken);
+    UpdateStudentRequest update = new UpdateStudentRequest("Name", "newemail@example.com");
+    HttpEntity<UpdateStudentRequest> entity = new HttpEntity<>(update, headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange(
+            "/api/v1/students/" + authenticatedStudentId, HttpMethod.PUT, entity, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.code")).isEqualTo("CSRF_INVALID");
+    assertThat((String) documentContext.read("$.title")).isEqualTo("Forbidden");
+    assertThat((String) documentContext.read("$.detail"))
+        .isEqualTo("Invalid or missing CSRF token");
+  }
+
+  @Test
+  void shouldAcceptStateChangingBearerRequestWithoutCsrfToken() {
+    HttpHeaders headers = new HttpHeaders();
+    headers.setBearerAuth(authToken);
+    UpdateStudentRequest update =
+        new UpdateStudentRequest("Bearer User", "bearer.update@example.com");
+    HttpEntity<UpdateStudentRequest> entity = new HttpEntity<>(update, headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange(
+            "/api/v1/students/" + authenticatedStudentId, HttpMethod.PUT, entity, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+  }
+
+  @Test
+  void shouldAcceptStateChangingCookieRequestWithCsrfToken() {
+    HttpHeaders getHeaders = new HttpHeaders();
+    getHeaders.set("X-Skip-Auth", "true");
+    getHeaders.add(HttpHeaders.COOKIE, "access_token=" + authToken);
+    ResponseEntity<String> getResponse =
+        testRestTemplate.exchange(
+            "/api/v1/students", HttpMethod.GET, new HttpEntity<>(getHeaders), String.class);
+    assertThat(getResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    List<String> cookies = getResponse.getHeaders().get(HttpHeaders.SET_COOKIE);
+    String xsrfToken = null;
+    if (cookies != null) {
+      for (String c : cookies) {
+        if (c.startsWith("XSRF-TOKEN=")) {
+          int end = c.indexOf(';');
+          xsrfToken =
+              end != -1
+                  ? c.substring("XSRF-TOKEN=".length(), end)
+                  : c.substring("XSRF-TOKEN=".length());
+          break;
+        }
+      }
+    }
+    assertThat(xsrfToken).isNotNull();
+
+    HttpHeaders putHeaders = new HttpHeaders();
+    putHeaders.set("X-Skip-Auth", "true");
+    putHeaders.add(HttpHeaders.COOKIE, "access_token=" + authToken + "; XSRF-TOKEN=" + xsrfToken);
+    putHeaders.set("X-XSRF-TOKEN", xsrfToken);
+    UpdateStudentRequest update =
+        new UpdateStudentRequest("Updated Auth User", "auth.user@example.com");
+    HttpEntity<UpdateStudentRequest> entity = new HttpEntity<>(update, putHeaders);
+
+    ResponseEntity<String> putResponse =
+        testRestTemplate.exchange(
+            "/api/v1/students/" + authenticatedStudentId, HttpMethod.PUT, entity, String.class);
+
+    assertThat(putResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
   }
 }

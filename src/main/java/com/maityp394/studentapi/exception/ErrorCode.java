@@ -24,10 +24,13 @@ public enum ErrorCode {
   STUDENT_EMAIL_ALREADY_EXISTS(HttpStatus.CONFLICT, "Student Email Already Exists"),
 
   // ============================================================
-  // Authentication
+  // Authentication & Authorization (Security)
   // ============================================================
   INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "Invalid Credentials"),
-  AUTHENTICATION_REQUIRED(HttpStatus.UNAUTHORIZED, "Authentication Required");
+  UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Unauthorized"),
+  INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "Unauthorized"),
+  FORBIDDEN(HttpStatus.FORBIDDEN, "Forbidden"),
+  CSRF_INVALID(HttpStatus.FORBIDDEN, "Forbidden");
 
   private final HttpStatus status;
   private final String title;

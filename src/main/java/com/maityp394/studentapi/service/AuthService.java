@@ -2,7 +2,7 @@ package com.maityp394.studentapi.service;
 
 import com.maityp394.studentapi.dto.request.LoginRequest;
 import com.maityp394.studentapi.dto.request.RegisterRequest;
-import com.maityp394.studentapi.dto.response.AuthResponse;
+import com.maityp394.studentapi.dto.response.AuthResult;
 import com.maityp394.studentapi.dto.response.StudentResponse;
 import java.util.UUID;
 
@@ -21,9 +21,9 @@ public interface AuthService {
    * Authenticates student credentials and issues a signed JWT access token.
    *
    * @param request the login credentials
-   * @return an {@link AuthResponse} containing the JWT bearer token
+   * @return an {@link AuthResult} containing student information and token metadata
    */
-  AuthResponse login(LoginRequest request);
+  AuthResult login(LoginRequest request);
 
   /**
    * Retrieves profile details for the authenticated student.

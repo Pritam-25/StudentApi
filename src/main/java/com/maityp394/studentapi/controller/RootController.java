@@ -6,10 +6,6 @@ import org.springframework.web.bind.annotation.RestController;
 /** Controller handling root endpoint requests for service health and welcome status. */
 @RestController
 public class RootController {
-
-  /** Default constructor for RootController. */
-  public RootController() {}
-
   /**
    * Returns a welcome message at the root URL.
    *

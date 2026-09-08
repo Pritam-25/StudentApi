@@ -1,7 +1,6 @@
 package com.maityp394.studentapi.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.net.URI;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -108,23 +107,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
    */
   private ProblemDetail buildProblem(
       ErrorCode errorCode, String detail, HttpServletRequest request) {
-
-    ProblemDetail problem = ProblemDetail.forStatus(errorCode.getStatus());
-
-    problem.setTitle(errorCode.getTitle());
-
-    if (detail != null && !detail.isBlank()) {
-      problem.setDetail(detail);
-    }
-
-    if (request != null) {
-      problem.setInstance(URI.create(request.getRequestURI()));
-    }
-
-    problem.setProperty("code", errorCode.name());
-    problem.setProperty("timestamp", Instant.now());
-
-    return problem;
+    return ProblemDetailFactory.create(errorCode, detail, request);
   }
 
   /**

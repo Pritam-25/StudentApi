@@ -2,7 +2,7 @@ package com.maityp394.studentapi.service.impl;
 
 import com.maityp394.studentapi.dto.request.LoginRequest;
 import com.maityp394.studentapi.dto.request.RegisterRequest;
-import com.maityp394.studentapi.dto.response.AuthResponse;
+import com.maityp394.studentapi.dto.response.AuthResult;
 import com.maityp394.studentapi.dto.response.StudentResponse;
 import com.maityp394.studentapi.entity.Student;
 import com.maityp394.studentapi.exception.DuplicateResourceException;
@@ -16,6 +16,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,9 +37,7 @@ public class AuthServiceImpl implements AuthService {
   /** {@inheritDoc} */
   @Override
   public StudentResponse register(RegisterRequest request) {
-    String email = request.email().trim().toLowerCase();
-
-    if (studentRepository.existsByEmail(email)) {
+    if (studentRepository.existsByEmail(request.email().trim().toLowerCase())) {
       throw new DuplicateResourceException(ErrorCode.STUDENT_EMAIL_ALREADY_EXISTS);
     }
 
@@ -50,11 +49,13 @@ public class AuthServiceImpl implements AuthService {
 
   /** {@inheritDoc} */
   @Override
-  public AuthResponse login(LoginRequest request) {
+  public AuthResult login(LoginRequest request) {
     String email = request.email().trim().toLowerCase();
 
-    authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(email, request.password()));
+    Authentication authenticationRequest =
+        UsernamePasswordAuthenticationToken.unauthenticated(email, request.password());
+
+    authenticationManager.authenticate(authenticationRequest);
 
     Student student =
         studentRepository
@@ -62,8 +63,9 @@ public class AuthServiceImpl implements AuthService {
             .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.STUDENT_NOT_FOUND));
 
     String token = jwtService.generateAccessToken(student);
+    StudentResponse studentResponse = studentMapper.toResponse(student);
 
-    return new AuthResponse(token, "Bearer", jwtService.getExpirationSeconds());
+    return new AuthResult(studentResponse, token, jwtService.getExpirationSeconds());
   }
 
   /** {@inheritDoc} */

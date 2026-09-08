@@ -2,7 +2,6 @@
 
 # Variables captured dynamically from responses
 @studentId = {{register.response.body.data.id}}
-@authToken = {{login.response.body.data.accessToken}}
 
 ### ==================================================================
 ### 1. Root / Health Check Endpoint (Public)
@@ -24,7 +23,8 @@ Content-Type: application/json
   "password": "SecurePassword123!"
 }
 
-### 2.2 Login to Obtain JWT Bearer Token (POST)
+### 2.2 Login to Obtain HttpOnly Cookie (POST)
+# REST Client automatically captures the 'access_token' Set-Cookie header.
 # @name login
 POST {{baseUrl}}/api/v1/auth/login
 Content-Type: application/json
@@ -35,28 +35,28 @@ Content-Type: application/json
 }
 
 ### 2.3 Get Current Authenticated User Profile (GET)
+# Automatically authenticates via the 'access_token' cookie set by login!
 GET {{baseUrl}}/api/v1/auth/me
-Authorization: Bearer {{authToken}}
 
 ### 2.4 Logout (POST)
+# Clears the access_token cookie with Max-Age=0
 POST {{baseUrl}}/api/v1/auth/logout
-Authorization: Bearer {{authToken}}
 
 ### ==================================================================
-### 3. Student Resource Endpoints (Protected by Bearer Token)
+### 3. Student Resource Endpoints (Protected by Cookie / Bearer)
 ### ==================================================================
 
 ### 3.1 Get All Students (Paginated & Sorted)
+# Automatically authenticates using the cookie
 GET {{baseUrl}}/api/v1/students?page=0&size=5&sort=name,asc
-Authorization: Bearer {{authToken}}
 
 ### 3.2 Get Student By ID
 GET {{baseUrl}}/api/v1/students/{{studentId}}
-Authorization: Bearer {{authToken}}
 
 ### 3.3 Update Student (Full Update - PUT)
+# Note: For cookie auth, browser/SPA sends the X-XSRF-TOKEN header.
+# For API clients sending Authorization: Bearer, CSRF header is not required.
 PUT {{baseUrl}}/api/v1/students/{{studentId}}
-Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -66,7 +66,6 @@ Content-Type: application/json
 
 ### 3.4 Patch Student (Partial Update - PATCH)
 PATCH {{baseUrl}}/api/v1/students/{{studentId}}
-Authorization: Bearer {{authToken}}
 Content-Type: application/json
 
 {
@@ -107,15 +106,15 @@ Content-Type: application/json
 }
 
 ### 4.4 Unauthorized Error - Missing JWT Token (HTTP 401)
+# Sends request without any cookies or authorization headers
 GET {{baseUrl}}/api/v1/students
+X-Skip-Cookies: true
 
 ### 4.5 Type Mismatch Error - Malformed UUID Path Variable (HTTP 400)
 GET {{baseUrl}}/api/v1/students/invalid-uuid-format
-Authorization: Bearer {{authToken}}
 
 ### 4.6 Resource Not Found Error - Non-existent UUID (HTTP 404)
 GET {{baseUrl}}/api/v1/students/00000000-0000-0000-0000-000000000000
-Authorization: Bearer {{authToken}}
 
 ### ==================================================================
 ### 5. Cleanup - Delete Student (DELETE)
@@ -123,4 +122,3 @@ Authorization: Bearer {{authToken}}
 
 ### 5.1 Delete Student By ID
 DELETE {{baseUrl}}/api/v1/students/{{studentId}}
-Authorization: Bearer {{authToken}}
