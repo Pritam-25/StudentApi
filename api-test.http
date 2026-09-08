@@ -3,6 +3,9 @@
 # Variables captured dynamically from responses
 @studentId = {{register.response.body.data.id}}
 
+# CSRF Token for cookie auth: Copy the value of 'XSRF-TOKEN' cookie (set after GET /api/v1/auth/me) here
+@xsrfToken = 
+
 ### ==================================================================
 ### 1. Root / Health Check Endpoint (Public)
 ### ==================================================================
@@ -19,7 +22,7 @@ Content-Type: application/json
 
 {
   "name": "Alex Johnson",
-  "email": "alex.johnson@example.com",
+  "email": "alex.johnson486@example.com",
   "password": "SecurePassword123!"
 }
 
@@ -36,11 +39,9 @@ Content-Type: application/json
 
 ### 2.3 Get Current Authenticated User Profile (GET)
 # Automatically authenticates via the 'access_token' cookie set by login!
+# Sets the readable 'XSRF-TOKEN' cookie used for CSRF-protected state-changing requests.
+# @name me
 GET {{baseUrl}}/api/v1/auth/me
-
-### 2.4 Logout (POST)
-# Clears the access_token cookie with Max-Age=0
-POST {{baseUrl}}/api/v1/auth/logout
 
 ### ==================================================================
 ### 3. Student Resource Endpoints (Protected by Cookie / Bearer)
@@ -54,10 +55,11 @@ GET {{baseUrl}}/api/v1/students?page=0&size=5&sort=name,asc
 GET {{baseUrl}}/api/v1/students/{{studentId}}
 
 ### 3.3 Update Student (Full Update - PUT)
-# Note: For cookie auth, browser/SPA sends the X-XSRF-TOKEN header.
+# Note: For cookie auth, browser/SPA sends the matching X-XSRF-TOKEN header.
 # For API clients sending Authorization: Bearer, CSRF header is not required.
 PUT {{baseUrl}}/api/v1/students/{{studentId}}
 Content-Type: application/json
+X-XSRF-TOKEN: {{xsrfToken}}
 
 {
   "name": "Alex Johnson Updated",
@@ -65,8 +67,10 @@ Content-Type: application/json
 }
 
 ### 3.4 Patch Student (Partial Update - PATCH)
+# Note: For cookie auth, browser/SPA sends the matching X-XSRF-TOKEN header.
 PATCH {{baseUrl}}/api/v1/students/{{studentId}}
 Content-Type: application/json
+X-XSRF-TOKEN: {{xsrfToken}}
 
 {
   "name": "Alex Johnson Patched"
@@ -117,8 +121,15 @@ GET {{baseUrl}}/api/v1/students/invalid-uuid-format
 GET {{baseUrl}}/api/v1/students/00000000-0000-0000-0000-000000000000
 
 ### ==================================================================
-### 5. Cleanup - Delete Student (DELETE)
+### 5. Cleanup & Session Termination
 ### ==================================================================
 
-### 5.1 Delete Student By ID
+### 5.1 Delete Student By ID (DELETE)
+# Note: For cookie auth, browser/SPA sends the matching X-XSRF-TOKEN header.
 DELETE {{baseUrl}}/api/v1/students/{{studentId}}
+X-XSRF-TOKEN: {{xsrfToken}}
+
+### 5.2 Logout (POST)
+# Clears the access_token cookie with Max-Age=0 after student requests and cleanup complete
+POST {{baseUrl}}/api/v1/auth/logout
+X-XSRF-TOKEN: {{xsrfToken}}

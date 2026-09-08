@@ -1,7 +1,9 @@
 package com.maityp394.studentapi.security;
 
+import com.maityp394.studentapi.config.properties.SecurityProperties;
 import jakarta.servlet.Filter;
 import jakarta.servlet.http.Cookie;
+import java.util.List;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,11 +21,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * Spring Security configuration configuring stateless session management, OAuth2 resource server
@@ -41,16 +48,22 @@ public class SecurityConfig {
 
   private final RestAuthenticationEntryPoint authenticationEntryPoint;
   private final RestAccessDeniedHandler accessDeniedHandler;
+  private final SecurityProperties securityProperties;
 
   public SecurityConfig(
       RestAuthenticationEntryPoint authenticationEntryPoint,
-      RestAccessDeniedHandler accessDeniedHandler) {
+      RestAccessDeniedHandler accessDeniedHandler,
+      SecurityProperties securityProperties) {
     this.authenticationEntryPoint = authenticationEntryPoint;
     this.accessDeniedHandler = accessDeniedHandler;
+    this.securityProperties = securityProperties;
   }
 
-  /** Paths that are exempted from both CSRF protection and authentication. */
-  private static final RequestMatcher PUBLIC_PATHS =
+  private static final RequestMatcher LOGOUT_PATH =
+      PathPatternRequestMatcher.pathPattern("/api/v1/auth/logout");
+
+  /** Paths that are exempted from CSRF protection (safe endpoints and initial auth). */
+  private static final RequestMatcher CSRF_EXEMPT_PATHS =
       new OrRequestMatcher(
           PathPatternRequestMatcher.pathPattern("/"),
           PathPatternRequestMatcher.pathPattern("/error"),
@@ -59,8 +72,11 @@ public class SecurityConfig {
           PathPatternRequestMatcher.pathPattern("/actuator/health"),
           PathPatternRequestMatcher.pathPattern("/actuator/info"),
           PathPatternRequestMatcher.pathPattern("/api/v1/auth/login"),
-          PathPatternRequestMatcher.pathPattern("/api/v1/auth/register"),
-          PathPatternRequestMatcher.pathPattern("/api/v1/auth/logout"));
+          PathPatternRequestMatcher.pathPattern("/api/v1/auth/register"));
+
+  /** Paths permitted without authentication (all CSRF-exempt public paths plus logout). */
+  private static final RequestMatcher AUTH_PUBLIC_PATHS =
+      new OrRequestMatcher(CSRF_EXEMPT_PATHS, LOGOUT_PATH);
 
   /**
    * Configures the main security filter chain for HTTP requests.
@@ -75,10 +91,12 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) {
     try {
-      http.csrf(
+      http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+          .csrf(
               csrf ->
                   csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                       .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                      .sessionAuthenticationStrategy(new NullAuthenticatedSessionStrategy())
                       .withObjectPostProcessor(
                           new ObjectPostProcessor<Filter>() {
                             @Override
@@ -90,11 +108,12 @@ public class SecurityConfig {
                               return filter;
                             }
                           }))
-          .addFilterAfter(new CsrfCookieFilter(), CsrfFilter.class)
+          .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
           .sessionManagement(
               session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
           .authorizeHttpRequests(
-              auth -> auth.requestMatchers(PUBLIC_PATHS).permitAll().anyRequest().authenticated())
+              auth ->
+                  auth.requestMatchers(AUTH_PUBLIC_PATHS).permitAll().anyRequest().authenticated())
           .oauth2ResourceServer(
               oauth2 ->
                   oauth2
@@ -115,6 +134,23 @@ public class SecurityConfig {
   }
 
   /**
+   * Checks whether the given request contains an {@code access_token} cookie with a non-blank
+   * value.
+   */
+  private boolean hasAccessTokenCookie(jakarta.servlet.http.HttpServletRequest request) {
+    if (request.getCookies() != null) {
+      for (Cookie cookie : request.getCookies()) {
+        if (ACCESS_TOKEN_COOKIE.equals(cookie.getName())
+            && cookie.getValue() != null
+            && !cookie.getValue().isBlank()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
    * Constructs the matcher that requires CSRF protection only for state-changing browser requests
    * using cookie authentication, exempting public endpoints and Bearer token requests.
    */
@@ -127,7 +163,8 @@ public class SecurityConfig {
       if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
         return false;
       }
-      return !PUBLIC_PATHS.matches(request);
+      return !CSRF_EXEMPT_PATHS.matches(request)
+          && (!LOGOUT_PATH.matches(request) || hasAccessTokenCookie(request));
     };
   }
 
@@ -171,5 +208,34 @@ public class SecurityConfig {
     DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
     provider.setPasswordEncoder(passwordEncoder);
     return new ProviderManager(provider);
+  }
+
+  /**
+   * Configures CORS to allow cross-origin requests from configured origins (e.g. Next.js frontend)
+   * with credentials and appropriate allowed/exposed headers.
+   *
+   * @return the configured {@link CorsConfigurationSource}
+   */
+  @Bean
+  public CorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration config = new CorsConfiguration();
+    config.setAllowedOrigins(securityProperties.cors().allowedOrigins());
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+    config.setAllowedHeaders(
+        List.of(
+            HttpHeaders.AUTHORIZATION,
+            HttpHeaders.CONTENT_TYPE,
+            HttpHeaders.ACCEPT,
+            HttpHeaders.ORIGIN,
+            "X-XSRF-TOKEN",
+            "X-Request-ID",
+            "X-Requested-With"));
+    config.setExposedHeaders(List.of("X-Request-ID"));
+    config.setAllowCredentials(true);
+    config.setMaxAge(3600L);
+
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+    return source;
   }
 }
