@@ -1,10 +1,7 @@
 package com.maityp394.studentapi.security;
 
-import com.maityp394.studentapi.config.properties.SecurityProperties;
-import jakarta.servlet.Filter;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
-import java.util.List;
-import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
@@ -12,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -32,16 +30,19 @@ import org.springframework.security.web.csrf.CsrfFilter;
 import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Spring Security configuration configuring stateless session management, OAuth2 resource server
- * JWT validation, dual-mode CSRF protection, and authentication manager.
+ * Main Spring Security configuration for the REST API.
  *
- * <p>JWT signing and verification beans are defined in {@link
- * com.maityp394.studentapi.config.JwtConfig}.
+ * <p>Configures:
+ *
+ * <ul>
+ *   <li>Stateless JWT authentication (OAuth2 Resource Server) supporting both headers and cookies.
+ *   <li>Dual-mode CSRF protection with SPA token handling.
+ *   <li>Database-backed username/password authentication via {@link AuthenticationManager}.
+ *   <li>RESTful exception handlers for 401 Unauthorized and 403 Forbidden responses.
+ * </ul>
  */
 @Configuration
 @EnableWebSecurity
@@ -50,147 +51,136 @@ public class SecurityConfig {
 
   private final RestAuthenticationEntryPoint authenticationEntryPoint;
   private final RestAccessDeniedHandler accessDeniedHandler;
-  private final SecurityProperties securityProperties;
 
   public SecurityConfig(
       RestAuthenticationEntryPoint authenticationEntryPoint,
-      RestAccessDeniedHandler accessDeniedHandler,
-      SecurityProperties securityProperties) {
+      RestAccessDeniedHandler accessDeniedHandler) {
     this.authenticationEntryPoint = authenticationEntryPoint;
     this.accessDeniedHandler = accessDeniedHandler;
-    this.securityProperties = securityProperties;
   }
 
-  private static final RequestMatcher LOGOUT_PATH =
-      PathPatternRequestMatcher.pathPattern("/api/v1/auth/logout");
+  private static RequestMatcher path(String pattern) {
+    return PathPatternRequestMatcher.pathPattern(pattern);
+  }
 
-  /** Paths that are exempted from CSRF protection (safe endpoints and initial auth). */
+  private static final RequestMatcher LOGOUT_PATH = path("/api/v1/auth/logout");
+
   private static final RequestMatcher CSRF_EXEMPT_PATHS =
       new OrRequestMatcher(
-          PathPatternRequestMatcher.pathPattern("/"),
-          PathPatternRequestMatcher.pathPattern("/error"),
-          PathPatternRequestMatcher.pathPattern("/favicon.ico"),
-          PathPatternRequestMatcher.pathPattern("/.well-known/**"),
-          PathPatternRequestMatcher.pathPattern("/actuator/health"),
-          PathPatternRequestMatcher.pathPattern("/actuator/info"),
-          PathPatternRequestMatcher.pathPattern("/api/v1/auth/login"),
-          PathPatternRequestMatcher.pathPattern("/api/v1/auth/register"));
+          path("/"),
+          path("/error"),
+          path("/favicon.ico"),
+          path("/.well-known/**"),
+          path("/actuator/health"),
+          path("/actuator/info"),
+          path("/api/v1/auth/login"),
+          path("/api/v1/auth/register"));
 
-  /** Paths permitted without authentication (all CSRF-exempt public paths plus logout). */
-  private static final RequestMatcher AUTH_PUBLIC_PATHS =
+  private static final RequestMatcher PUBLIC_PATHS =
       new OrRequestMatcher(CSRF_EXEMPT_PATHS, LOGOUT_PATH);
 
   /**
-   * Configures the main security filter chain for HTTP requests.
+   * Configures the main HTTP security filter chain.
    *
-   * <p>Enforces CSRF protection for cookie-based browser sessions while exempting public endpoints
-   * and stateless {@code Authorization: Bearer} API requests.
-   *
-   * @param http the {@link HttpSecurity} builder
-   * @return the constructed {@link SecurityFilterChain}
-   * @throws BeanInitializationException if an error occurs while building the security filter chain
+   * <ul>
+   *   <li><b>CORS:</b> Uses application-defined CorsConfigurationSource defaults.
+   *   <li><b>CSRF:</b> Cookie-based (CookieCsrfTokenRepository) with SPA support and custom
+   *       matcher.
+   *   <li><b>Session:</b> Stateless (no HTTP sessions created or used).
+   *   <li><b>Authorization:</b> Permits public and auth endpoints; requires authentication for all
+   *       others.
+   *   <li><b>OAuth2 Resource Server:</b> Validates JWTs resolved from Authorization header or
+   *       cookie.
+   *   <li><b>Exception Handling:</b> RESTful 401 Unauthorized and 403 Forbidden JSON responses.
+   * </ul>
    */
   @Bean
-  public SecurityFilterChain securityFilterChain(
+  SecurityFilterChain securityFilterChain(
       HttpSecurity http, JwtAuthenticationConverter jwtAuthenticationConverter) {
-    try {
-      http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-          .csrf(
-              csrf ->
-                  csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                      .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
-                      .sessionAuthenticationStrategy(new NullAuthenticatedSessionStrategy())
-                      .withObjectPostProcessor(
-                          new ObjectPostProcessor<Filter>() {
-                            @Override
-                            public <O extends Filter> O postProcess(O filter) {
-                              if (filter instanceof CsrfFilter csrfFilter) {
-                                csrfFilter.setRequireCsrfProtectionMatcher(
-                                    requireCsrfProtectionMatcher());
-                              }
-                              return filter;
-                            }
-                          }))
-          .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
-          .sessionManagement(
-              session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-          .authorizeHttpRequests(
-              auth ->
-                  auth.requestMatchers(AUTH_PUBLIC_PATHS).permitAll().anyRequest().authenticated())
-          .oauth2ResourceServer(
-              oauth2 ->
-                  oauth2
-                      .bearerTokenResolver(bearerTokenResolver())
-                      .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
-                      .authenticationEntryPoint(authenticationEntryPoint)
-                      .accessDeniedHandler(accessDeniedHandler))
-          .exceptionHandling(
-              exceptions ->
-                  exceptions
-                      .authenticationEntryPoint(authenticationEntryPoint)
-                      .accessDeniedHandler(accessDeniedHandler));
+    http.cors(Customizer.withDefaults())
+        .csrf(
+            csrf ->
+                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .csrfTokenRequestHandler(new SpaCsrfTokenRequestHandler())
+                    .sessionAuthenticationStrategy(new NullAuthenticatedSessionStrategy())
+                    .withObjectPostProcessor(csrfFilterPostProcessor()))
+        .addFilterAfter(new CsrfCookieFilter(), BasicAuthenticationFilter.class)
+        .sessionManagement(
+            session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(
+            auth -> auth.requestMatchers(PUBLIC_PATHS).permitAll().anyRequest().authenticated())
+        .oauth2ResourceServer(
+            oauth2 ->
+                oauth2
+                    .bearerTokenResolver(bearerTokenResolver())
+                    .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
+                    .authenticationEntryPoint(authenticationEntryPoint)
+                    .accessDeniedHandler(accessDeniedHandler))
+        .exceptionHandling(
+            exceptions ->
+                exceptions
+                    .authenticationEntryPoint(authenticationEntryPoint)
+                    .accessDeniedHandler(accessDeniedHandler));
 
-      return http.build();
-    } catch (Exception ex) {
-      throw new BeanInitializationException("Failed to build security filter chain", ex);
-    }
+    return http.build();
   }
 
   /**
-   * Checks whether the given request contains an {@code access_token} cookie with a non-blank
-   * value.
+   * OAuth2ResourceServerConfigurer auto-adds BearerTokenRequestMatcher to CsrfConfigurer's ignored
+   * list. Because our BearerTokenResolver also resolves tokens from the access_token cookie, the
+   * configurer API (.requireCsrfProtectionMatcher) would wrap our matcher with AND(ours,
+   * NOT(BearerTokenRequestMatcher)), disabling CSRF for cookie-authenticated requests. Setting the
+   * matcher directly on CsrfFilter via postProcess bypasses this.
    */
-  private boolean hasAccessTokenCookie(jakarta.servlet.http.HttpServletRequest request) {
-    return SecurityConstants.hasAccessTokenCookie(request);
-  }
-
-  /**
-   * Constructs the matcher that requires CSRF protection only for state-changing browser requests
-   * using cookie authentication, exempting public endpoints and Bearer token requests.
-   */
-  private RequestMatcher requireCsrfProtectionMatcher() {
-    return request -> {
-      if (!CsrfFilter.DEFAULT_CSRF_MATCHER.matches(request)) {
-        return false;
+  private ObjectPostProcessor<OncePerRequestFilter> csrfFilterPostProcessor() {
+    return new ObjectPostProcessor<>() {
+      @Override
+      public <O extends OncePerRequestFilter> O postProcess(O filter) {
+        if (filter instanceof CsrfFilter csrfFilter) {
+          csrfFilter.setRequireCsrfProtectionMatcher(requireCsrfProtectionMatcher());
+        }
+        return filter;
       }
-      String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
-      if (authHeader != null && authHeader.startsWith(SecurityConstants.BEARER_PREFIX)) {
-        return false;
-      }
-      return !CSRF_EXEMPT_PATHS.matches(request)
-          && (!LOGOUT_PATH.matches(request) || hasAccessTokenCookie(request));
     };
   }
 
+  private RequestMatcher requireCsrfProtectionMatcher() {
+    return request ->
+        CsrfFilter.DEFAULT_CSRF_MATCHER.matches(request)
+            && !hasBearerToken(request)
+            && !CSRF_EXEMPT_PATHS.matches(request)
+            && (!LOGOUT_PATH.matches(request) || SecurityConstants.hasAccessTokenCookie(request));
+  }
+
+  private boolean hasBearerToken(HttpServletRequest request) {
+    String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
+    return authorization != null && authorization.startsWith(SecurityConstants.BEARER_PREFIX);
+  }
+
   /**
-   * Configures a custom {@link BearerTokenResolver} that supports dual token transport:
-   * prioritizing the standard {@code Authorization: Bearer} header, with fallback to the {@code
-   * access_token} HttpOnly cookie.
+   * Dual-mode Bearer token resolver.
    *
-   * @return the configured {@link BearerTokenResolver}
+   * <p>Checks the standard {@code Authorization: Bearer <token>} header first. If absent, falls
+   * back to resolving the token from the {@code access_token} HTTP cookie.
    */
   @Bean
-  public BearerTokenResolver bearerTokenResolver() {
+  BearerTokenResolver bearerTokenResolver() {
     DefaultBearerTokenResolver delegate = new DefaultBearerTokenResolver();
     return request -> {
       String token = delegate.resolve(request);
-      if (token != null) {
-        return token;
-      }
-      return SecurityConstants.getAccessTokenFromCookie(request);
+      return token != null ? token : SecurityConstants.getAccessTokenFromCookie(request);
     };
   }
 
   /**
-   * Configures an {@link AuthenticationManager} using {@link DaoAuthenticationProvider} and the
-   * custom user details service.
+   * Configures the {@link AuthenticationManager} for username/password authentication (e.g.,
+   * login).
    *
-   * @param userDetailsService the service providing user records
-   * @param passwordEncoder the password encoder for verifying password hashes
-   * @return the configured {@link AuthenticationManager}
+   * <p>Uses a {@link DaoAuthenticationProvider} wired with the application's {@link
+   * UserDetailsService} and {@link PasswordEncoder}.
    */
   @Bean
-  public AuthenticationManager authenticationManager(
+  AuthenticationManager authenticationManager(
       UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
     DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
     provider.setPasswordEncoder(passwordEncoder);
@@ -198,42 +188,13 @@ public class SecurityConfig {
   }
 
   /**
-   * Configures CORS to allow cross-origin requests from configured origins (e.g. Next.js frontend)
-   * with credentials and appropriate allowed/exposed headers.
+   * Configures the {@link JwtAuthenticationConverter} used by the OAuth2 resource server.
    *
-   * @return the configured {@link CorsConfigurationSource}
+   * <p>Applies the custom {@link Converter} to extract roles and authorities from decoded JWT
+   * claims into Spring Security {@link GrantedAuthority} collections.
    */
   @Bean
-  public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(securityProperties.cors().allowedOrigins());
-    config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    config.setAllowedHeaders(
-        List.of(
-            HttpHeaders.AUTHORIZATION,
-            HttpHeaders.CONTENT_TYPE,
-            HttpHeaders.ACCEPT,
-            HttpHeaders.ORIGIN,
-            "X-XSRF-TOKEN",
-            "X-Request-ID",
-            "X-Requested-With"));
-    config.setExposedHeaders(List.of("X-Request-ID"));
-    config.setAllowCredentials(true);
-    config.setMaxAge(3600L);
-
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", config);
-    return source;
-  }
-
-  /**
-   * Configures a {@link JwtAuthenticationConverter} using the provided authorities' converter.
-   *
-   * @param authoritiesConverter the converter used to dynamically resolve authorities
-   * @return the configured {@link JwtAuthenticationConverter}
-   */
-  @Bean
-  public JwtAuthenticationConverter jwtAuthenticationConverter(
+  JwtAuthenticationConverter jwtAuthenticationConverter(
       Converter<Jwt, Collection<GrantedAuthority>> authoritiesConverter) {
     JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
     converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);

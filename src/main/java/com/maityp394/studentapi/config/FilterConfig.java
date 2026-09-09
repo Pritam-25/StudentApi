@@ -27,7 +27,7 @@ public class FilterConfig {
    * @return the configured {@link FilterRegistrationBean}
    */
   @Bean
-  public FilterRegistrationBean<RequestIdFilter> requestIdFilterRegistration() {
+  FilterRegistrationBean<RequestIdFilter> requestIdFilterRegistration() {
     FilterRegistrationBean<RequestIdFilter> registration = new FilterRegistrationBean<>();
     registration.setFilter(new RequestIdFilter());
     registration.addUrlPatterns("/api/*");
@@ -43,7 +43,7 @@ public class FilterConfig {
    * @return the configured {@link FilterRegistrationBean}
    */
   @Bean
-  public FilterRegistrationBean<RequestLoggingFilter> requestLoggingFilterRegistration() {
+  FilterRegistrationBean<RequestLoggingFilter> requestLoggingFilterRegistration() {
     FilterRegistrationBean<RequestLoggingFilter> registration = new FilterRegistrationBean<>();
     registration.setFilter(new RequestLoggingFilter());
     registration.addUrlPatterns("/api/*");

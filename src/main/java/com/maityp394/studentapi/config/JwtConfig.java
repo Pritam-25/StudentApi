@@ -37,7 +37,7 @@ public class JwtConfig {
    * @return a {@link SecretKey} suitable for HMAC-SHA256 operations
    */
   @Bean
-  public SecretKey jwtSigningKey(JwtProperties jwtProperties) {
+  SecretKey jwtSigningKey(JwtProperties jwtProperties) {
     return new SecretKeySpec(jwtProperties.secret().getBytes(StandardCharsets.UTF_8), HMAC_SHA_256);
   }
 
@@ -50,7 +50,7 @@ public class JwtConfig {
    * @return the configured {@link JwtDecoder}
    */
   @Bean
-  public JwtDecoder jwtDecoder(SecretKey jwtSigningKey, JwtProperties jwtProperties) {
+  JwtDecoder jwtDecoder(SecretKey jwtSigningKey, JwtProperties jwtProperties) {
     NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtSigningKey).build();
     decoder.setJwtValidator(
         new DelegatingOAuth2TokenValidator<>(
@@ -65,7 +65,7 @@ public class JwtConfig {
    * @return the configured {@link JwtEncoder}
    */
   @Bean
-  public JwtEncoder jwtEncoder(SecretKey jwtSigningKey) {
+  JwtEncoder jwtEncoder(SecretKey jwtSigningKey) {
     return new NimbusJwtEncoder(new ImmutableSecret<>(jwtSigningKey));
   }
 }

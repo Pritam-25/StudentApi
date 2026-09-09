@@ -18,7 +18,7 @@ public class PasswordConfig {
    * @return a configured {@link BCryptPasswordEncoder} instance
    */
   @Bean
-  public PasswordEncoder passwordEncoder() {
+  PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
 }
