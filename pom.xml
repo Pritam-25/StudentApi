@@ -299,6 +299,9 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar} -XX:+EnableDynamicAgentLoading -Xshare:off</argLine>
+					<systemPropertyVariables>
+						<spring.output.ansi.enabled>ALWAYS</spring.output.ansi.enabled>
+					</systemPropertyVariables>
 				</configuration>
 			</plugin>
 
