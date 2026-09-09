@@ -10,7 +10,7 @@
 
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
-                <pattern>%clr([%d{yyyy-MM-dd - HH:mm:ss}]){faint} %clr(%5p) %clr([${appName}]){magenta} %clr(%-35.35logger{34}){cyan} : %httpClr(%m){}%n</pattern>
+                <pattern>%clr([%d{yyyy-MM-dd - HH:mm:ss}]){faint} %clr(%5p) %clr([${appName}]){magenta} %clr([%X{requestId:-}]){yellow} %clr(%-35.35logger{34}){cyan} : %httpClr(%m){}%n</pattern>
             </encoder>
         </appender>
 

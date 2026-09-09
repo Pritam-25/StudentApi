@@ -15,31 +15,39 @@ import org.springframework.context.annotation.Configuration;
 public class FilterConfig {
 
   /**
-   * Registers {@link RequestIdFilter} to intercept requests to {@code /api/*} at Order 1.
+   * Default order of Spring Security's filter chain in the Servlet container (-100). Filters
+   * ordered before this value execute prior to Spring Security checks.
+   */
+  private static final int SECURITY_FILTER_ORDER = -100;
+
+  /**
+   * Registers {@link RequestIdFilter} to intercept requests to {@code /api/*} before Spring
+   * Security.
    *
    * @return the configured {@link FilterRegistrationBean}
    */
   @Bean
-  public FilterRegistrationBean<RequestIdFilter> requestIdFilterRegistration() {
+  FilterRegistrationBean<RequestIdFilter> requestIdFilterRegistration() {
     FilterRegistrationBean<RequestIdFilter> registration = new FilterRegistrationBean<>();
     registration.setFilter(new RequestIdFilter());
     registration.addUrlPatterns("/api/*");
-    registration.setOrder(1);
+    registration.setOrder(SECURITY_FILTER_ORDER - 2);
     registration.setDispatcherTypes(DispatcherType.REQUEST);
     return registration;
   }
 
   /**
-   * Registers {@link RequestLoggingFilter} to intercept requests to {@code /api/*} at Order 2.
+   * Registers {@link RequestLoggingFilter} to intercept requests to {@code /api/*} before Spring
+   * Security.
    *
    * @return the configured {@link FilterRegistrationBean}
    */
   @Bean
-  public FilterRegistrationBean<RequestLoggingFilter> requestLoggingFilterRegistration() {
+  FilterRegistrationBean<RequestLoggingFilter> requestLoggingFilterRegistration() {
     FilterRegistrationBean<RequestLoggingFilter> registration = new FilterRegistrationBean<>();
     registration.setFilter(new RequestLoggingFilter());
     registration.addUrlPatterns("/api/*");
-    registration.setOrder(2);
+    registration.setOrder(SECURITY_FILTER_ORDER - 1);
     registration.setDispatcherTypes(DispatcherType.REQUEST);
     return registration;
   }

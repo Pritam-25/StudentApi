@@ -1,54 +1,105 @@
-@baseUrl = http://localhost:8080
+@baseUrl = http://localhost:8000
 
-# Default fallback ID (Will be automatically overwritten when Request #3 runs)
-@studentId = {{createStudent.response.body.data.id}}
+# Variables captured dynamically from responses
+@studentId = {{register.response.body.data.id}}
 
-### 1. Root / Health Check Endpoint
+# Fallback studentId if not registered
+@fallbackStudentId = 43e3966c-69c7-422d-9d86-2623e1476221
+
+# CSRF Token for cookie auth: Copy the value of 'XSRF-TOKEN' cookie (set after GET /api/v1/auth/me) here
+@xsrfToken = 644ce856-7aac-40bb-bc5e-b9015cdb99bc
+
+### ==================================================================
+### 1. Root / Health Check Endpoint (Public)
+### ==================================================================
 GET {{baseUrl}}/
 
-### 2. Get All Students (Paginated & Sorted)
-GET {{baseUrl}}/api/v1/students?page=0&size=5&sort=name,asc
+### ==================================================================
+### 2. Authentication Flow (Public & Authenticated)
+### ==================================================================
 
-### 3. Create a New Student (POST)
-# @name createStudent
-POST {{baseUrl}}/api/v1/students
+### 2.1 Register a New Student (POST)
+# Automatically authenticates and sets HttpOnly 'access_token' cookie (auto-login).
+# @name register
+POST {{baseUrl}}/api/v1/auth/register
 Content-Type: application/json
 
 {
   "name": "Alex Johnson",
-  "email": "alex.john6080@example.com",
+  "email": "alex.johnson@example.com",
   "password": "SecurePassword123!"
 }
 
-### 4. Get Student By ID (GET)
+### 2.2 Login to Obtain HttpOnly Cookie (POST - Optional if registered above)
+# REST Client automatically captures the 'access_token' Set-Cookie header.
+# @name login
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "alex.johnson@example.com",
+  "password": "SecurePassword123!"
+}
+
+### 2.3 Get Current Authenticated User Profile (GET)
+# Automatically authenticates via the 'access_token' cookie set by login!
+# Sets the readable 'XSRF-TOKEN' cookie used for CSRF-protected state-changing requests.
+# @name me
+GET {{baseUrl}}/api/v1/auth/me
+
+### ==================================================================
+### 3. Student Resource Endpoints (Protected by Cookie / Bearer)
+### ==================================================================
+
+### 3.1 Get All Students (Paginated & Sorted - Class Representative Only)
+# Requires ROLE_CLASS_REPRESENTATIVE. Returns HTTP 403 Forbidden for standard STUDENT accounts.
+# Optional query parameters: responsibility=STUDENT|CLASS_REPRESENTATIVE, page, size, sort=createdAt,desc
+GET {{baseUrl}}/api/v1/students?page=0&size=5&sort=createdAt,desc
+
+### 3.1.1 Filter Students by Responsibility (e.g. STUDENT only)
+GET {{baseUrl}}/api/v1/students?responsibility=STUDENT&page=0&size=10&sort=name,asc
+
+### 3.2 Get Student By ID
 GET {{baseUrl}}/api/v1/students/{{studentId}}
 
-### 5. Update Student (Full Update - PUT)
-PUT {{baseUrl}}/api/v1/students/{{studentId}}
+### 3.3 Update Student (Full Update - PUT)
+# Note: For cookie auth, browser/SPA sends the matching X-XSRF-TOKEN header.
+# For API clients sending Authorization: Bearer, CSRF header is not required.
+PUT {{baseUrl}}/api/v1/students/{{fallbackStudentId}}
 Content-Type: application/json
+X-XSRF-TOKEN: {{xsrfToken}}
 
 {
   "name": "Alex Johnson Updated",
-  "email": "alex.updated@example.com"
+  "email": "alex.johnson@example.com"
 }
 
-### 6. Patch Student (Partial Update - PATCH)
-PATCH {{baseUrl}}/api/v1/students/{{studentId}}
+### 3.4 Patch Student (Partial Update - PATCH)
+# Note: For cookie auth, browser/SPA sends the matching X-XSRF-TOKEN header.
+PATCH {{baseUrl}}/api/v1/students/{{fallbackStudentId}}
 Content-Type: application/json
+X-XSRF-TOKEN: {{xsrfToken}}
 
 {
-  "name": "Alex Johnson Patched new"
+  "name": "Alex Johnson Patched"
 }
 
-### 7. Delete Student By ID (DELETE)
-DELETE {{baseUrl}}/api/v1/students/{{studentId}}
+### 3.5 Update Student Responsibility (PATCH - Class Representative Only)
+# Promotes or reassigns a student's institutional responsibility.
+PATCH {{baseUrl}}/api/v1/students/{{fallbackStudentId}}/responsibility
+Content-Type: application/json
+X-XSRF-TOKEN: {{xsrfToken}}
+
+{
+  "responsibility": "CLASS_REPRESENTATIVE"
+}
 
 ### ==================================================================
-### Error Handling & Validation Scenarios (RFC 9457 Testing)
+### 4. Error Handling & Validation Scenarios (RFC 9457 Testing)
 ### ==================================================================
 
-### 8. Validation Error - Invalid Payload (HTTP 400)
-POST {{baseUrl}}/api/v1/students
+### 4.1 Validation Error - Invalid Registration Payload (HTTP 400)
+POST {{baseUrl}}/api/v1/auth/register
 Content-Type: application/json
 
 {
@@ -57,18 +108,46 @@ Content-Type: application/json
   "password": "123"
 }
 
-### 9. Conflict Error - Duplicate Email (HTTP 409)
-POST {{baseUrl}}/api/v1/students
+### 4.2 Conflict Error - Duplicate Email Registration (HTTP 409)
+POST {{baseUrl}}/api/v1/auth/register
 Content-Type: application/json
 
 {
   "name": "Duplicate User",
-  "email": "alex.updated@example.com",
+  "email": "alex.johnson@example.com",
   "password": "SecurePassword123!"
 }
 
-### 10. Type Mismatch Error - Malformed UUID Path Variable (HTTP 400)
+### 4.3 Unauthorized Error - Bad Login Credentials (HTTP 401)
+POST {{baseUrl}}/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "alex.johnson@example.com",
+  "password": "WrongPassword123!"
+}
+
+### 4.4 Unauthorized Error - Missing JWT Token (HTTP 401)
+# Sends request without any cookies or authorization headers
+GET {{baseUrl}}/api/v1/students
+X-Skip-Cookies: true
+
+### 4.5 Type Mismatch Error - Malformed UUID Path Variable (HTTP 400)
 GET {{baseUrl}}/api/v1/students/invalid-uuid-format
 
-### 11. Resource Not Found Error - Non-existent UUID (HTTP 404)
+### 4.6 Resource Not Found Error - Non-existent UUID (HTTP 404)
 GET {{baseUrl}}/api/v1/students/00000000-0000-0000-0000-000000000000
+
+### ==================================================================
+### 5. Cleanup & Session Termination
+### ==================================================================
+
+### 5.1 Delete Student By ID (DELETE)
+# Note: For cookie auth, browser/SPA sends the matching X-XSRF-TOKEN header.
+DELETE {{baseUrl}}/api/v1/students/{{fallbackStudentId}}
+X-XSRF-TOKEN: {{xsrfToken}}
+
+### 5.2 Logout (POST)
+# Clears the access_token cookie with Max-Age=0 after student requests and cleanup complete
+POST {{baseUrl}}/api/v1/auth/logout
+X-XSRF-TOKEN: {{xsrfToken}}

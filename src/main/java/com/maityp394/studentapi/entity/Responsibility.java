@@ -6,5 +6,14 @@ public enum Responsibility {
   STUDENT,
 
   /** Student acting as class representative with elevated representation duties. */
-  CLASS_REPRESENTATIVE,
+  CLASS_REPRESENTATIVE;
+
+  /**
+   * Returns the Spring Security authority format (e.g. {@code "ROLE_CLASS_REPRESENTATIVE"}).
+   *
+   * @return the authority string prefixed with {@code ROLE_}
+   */
+  public String toAuthority() {
+    return "ROLE_" + name();
+  }
 }

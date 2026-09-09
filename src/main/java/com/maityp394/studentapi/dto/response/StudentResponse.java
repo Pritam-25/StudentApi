@@ -1,30 +1,25 @@
 package com.maityp394.studentapi.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.maityp394.studentapi.entity.Responsibility;
+import java.time.Instant;
 import java.util.UUID;
-import lombok.Data;
 
-/** Data transfer object representing the response payload containing student details. */
-@Data
-public class StudentResponse {
-  /** The unique identifier of the student. */
-  private UUID id;
-
-  /** The full name of the student. */
-  private String name;
-
-  /** The email address of the student. */
-  private String email;
-
-  /**
-   * Constructs a new {@code StudentResponse} with all field values.
-   *
-   * @param id the unique student ID
-   * @param name the student's full name
-   * @param email the student's email address
-   */
-  public StudentResponse(UUID id, String name, String email) {
-    this.id = id;
-    this.name = name;
-    this.email = email;
-  }
-}
+/**
+ * Data transfer object representing the response payload containing student details.
+ *
+ * @param id the unique identifier of the student
+ * @param name the full name of the student
+ * @param email the email address of the student
+ * @param responsibility the institutional responsibility/role of the student
+ * @param createdAt UTC timestamp indicating when the student account was created
+ * @param updatedAt UTC timestamp indicating when the student profile was last updated
+ */
+@JsonPropertyOrder({"id", "name", "email", "responsibility", "createdAt", "updatedAt"})
+public record StudentResponse(
+    UUID id,
+    String name,
+    String email,
+    Responsibility responsibility,
+    Instant createdAt,
+    Instant updatedAt) {}

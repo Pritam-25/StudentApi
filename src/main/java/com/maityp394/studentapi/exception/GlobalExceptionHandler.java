@@ -1,7 +1,6 @@
 package com.maityp394.studentapi.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.net.URI;
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -9,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -107,23 +108,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
    */
   private ProblemDetail buildProblem(
       ErrorCode errorCode, String detail, HttpServletRequest request) {
-
-    ProblemDetail problem = ProblemDetail.forStatus(errorCode.getStatus());
-
-    problem.setTitle(errorCode.getTitle());
-
-    if (detail != null && !detail.isBlank()) {
-      problem.setDetail(detail);
-    }
-
-    if (request != null) {
-      problem.setInstance(URI.create(request.getRequestURI()));
-    }
-
-    problem.setProperty("code", errorCode.name());
-    problem.setProperty("timestamp", Instant.now());
-
-    return problem;
+    return ProblemDetailFactory.create(errorCode, detail, request);
   }
 
   /**
@@ -210,7 +195,13 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     ex.getBindingResult()
         .getFieldErrors()
-        .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+        .forEach(
+            error -> {
+              String msg = error.getDefaultMessage();
+              if (msg != null) {
+                errors.merge(error.getField(), msg, (first, second) -> first + ", " + second);
+              }
+            });
 
     HttpServletRequest servletRequest =
         (request instanceof ServletWebRequest swr) ? swr.getRequest() : null;
@@ -256,10 +247,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
               result
                   .getResolvableErrors()
                   .forEach(
-                      resolvable ->
-                          errors.put(
+                      resolvable -> {
+                        String msg = resolvable.getDefaultMessage();
+                        if (msg != null) {
+                          errors.merge(
                               paramName != null ? paramName : "parameter",
-                              resolvable.getDefaultMessage()));
+                              msg,
+                              (first, second) -> first + ", " + second);
+                        }
+                      });
             });
 
     HttpServletRequest servletRequest =
@@ -315,7 +311,6 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
    * returns a sanitized client-facing message ({@code "The request conflicts with existing data."})
    * to prevent leakage of internal database table, column, or constraint names.
    *
-   * @param ex the data integrity violation exception thrown by Spring Data JPA / Hibernate
    * @param request the current {@link HttpServletRequest}
    * @return a {@link ResponseEntity} with HTTP 409 Conflict enclosing a {@code
    *     DATA_INTEGRITY_VIOLATION} {@link ProblemDetail}
@@ -323,8 +318,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
    * @see ErrorCode#DATA_INTEGRITY_VIOLATION
    */
   @ExceptionHandler(DataIntegrityViolationException.class)
-  public ResponseEntity<ProblemDetail> handleDataIntegrityViolation(
-      DataIntegrityViolationException ex, HttpServletRequest request) {
+  public ResponseEntity<ProblemDetail> handleDataIntegrityViolation(HttpServletRequest request) {
 
     log.warn("Database integrity violation occurred");
 
@@ -335,6 +329,45 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             request);
 
     return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+  }
+
+  /**
+   * Intercepts Spring Security bad credentials failures during login authentication.
+   *
+   * @param request the current {@link HttpServletRequest}
+   * @return a {@link ResponseEntity} with HTTP 401 Unauthorized enclosing an {@code
+   *     INVALID_CREDENTIALS} {@link ProblemDetail}
+   */
+  @ExceptionHandler(BadCredentialsException.class)
+  public ResponseEntity<ProblemDetail> handleBadCredentials(HttpServletRequest request) {
+
+    log.debug("Bad credentials authentication failure");
+
+    ProblemDetail problem =
+        buildProblem(ErrorCode.INVALID_CREDENTIALS, "Invalid email or password", request);
+
+    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(problem);
+  }
+
+  /**
+   * Intercepts Spring Security access denied failures (e.g. @PreAuthorize rejections).
+   *
+   * @param ex the access denied exception
+   * @param request the current {@link HttpServletRequest}
+   * @return a {@link ResponseEntity} with HTTP 403 Forbidden enclosing a {@code FORBIDDEN} {@link
+   *     ProblemDetail}
+   */
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ProblemDetail> handleAccessDenied(
+      AccessDeniedException ex, HttpServletRequest request) {
+
+    log.debug("Authorization failure: {}", ex.getMessage());
+
+    ProblemDetail problem =
+        buildProblem(
+            ErrorCode.FORBIDDEN, "You do not have permission to access this resource", request);
+
+    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(problem);
   }
 
   /**

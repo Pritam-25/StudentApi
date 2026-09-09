@@ -1,17 +1,22 @@
 package com.maityp394.studentapi.entity;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.Instant;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 /** Entity representing a student record in the database. */
 @Entity
 @Table(
     name = "students",
-    uniqueConstraints = {@UniqueConstraint(name = "uk_student_email", columnNames = "email")})
+    uniqueConstraints = {@UniqueConstraint(name = "uk_student_email", columnNames = "email")},
+    indexes = {
+      @Index(name = "idx_students_responsibility", columnList = "responsibility"),
+      @Index(name = "idx_students_name", columnList = "name")
+    })
 @Getter
 @Setter
 public class Student {
@@ -22,41 +27,29 @@ public class Student {
   private UUID id;
 
   /** The full name of the student. */
+  @Column(nullable = false, length = 50)
   private String name;
 
   /** The unique email address of the student. */
   @Column(unique = true, nullable = false)
   private String email;
 
-  /** The encrypted password for the student account. */
-  private String password;
+  /** BCrypt hash of the student's password. Never stores plaintext. */
+  @Column(nullable = false)
+  private String passwordHash;
 
   /** The role or responsibility of the student. */
   @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
   private Responsibility responsibility;
 
-  /** Timestamp indicating when the student record was created. */
-  private LocalDateTime createdAt;
+  /** UTC timestamp indicating when the student record was created. */
+  @CreationTimestamp
+  @Column(nullable = false, updatable = false)
+  private Instant createdAt;
 
-  /** Timestamp indicating when the student record was last updated. */
-  private LocalDateTime updatedAt;
-
-  /**
-   * Lifecycle callback executed before the entity is first persisted to set creation and update
-   * timestamps.
-   */
-  @PrePersist
-  protected void onCreate() {
-    createdAt = LocalDateTime.now(ZoneId.systemDefault());
-    updatedAt = LocalDateTime.now(ZoneId.systemDefault());
-  }
-
-  /**
-   * Lifecycle callback executed before an existing entity is updated to refresh the updated
-   * timestamp.
-   */
-  @PreUpdate
-  protected void onUpdate() {
-    updatedAt = LocalDateTime.now(ZoneId.systemDefault());
-  }
+  /** UTC timestamp indicating when the student record was last updated. */
+  @UpdateTimestamp
+  @Column(nullable = false)
+  private Instant updatedAt;
 }
