@@ -1,10 +1,8 @@
 package com.maityp394.studentapi.security;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.Collection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
@@ -15,11 +13,10 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
@@ -190,12 +187,16 @@ public class SecurityConfig {
   /**
    * Configures the {@link JwtAuthenticationConverter} used by the OAuth2 resource server.
    *
-   * <p>Applies the custom {@link Converter} to extract roles and authorities from decoded JWT
-   * claims into Spring Security {@link GrantedAuthority} collections.
+   * <p>Applies {@link JwtGrantedAuthoritiesConverter} to extract roles and authorities from the
+   * {@code authorities} claim of decoded JWTs into Spring Security {@link
+   * org.springframework.security.core.GrantedAuthority} collections.
    */
   @Bean
-  JwtAuthenticationConverter jwtAuthenticationConverter(
-      Converter<Jwt, Collection<GrantedAuthority>> authoritiesConverter) {
+  JwtAuthenticationConverter jwtAuthenticationConverter() {
+    JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
+    authoritiesConverter.setAuthoritiesClaimName("authorities");
+    authoritiesConverter.setAuthorityPrefix("");
+
     JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
     converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
     return converter;

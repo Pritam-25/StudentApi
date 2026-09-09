@@ -3,8 +3,11 @@
 # Variables captured dynamically from responses
 @studentId = {{register.response.body.data.id}}
 
+# Fallback studentId if not registered
+@fallbackStudentId = 43e3966c-69c7-422d-9d86-2623e1476221
+
 # CSRF Token for cookie auth: Copy the value of 'XSRF-TOKEN' cookie (set after GET /api/v1/auth/me) here
-@xsrfToken = 
+@xsrfToken = 644ce856-7aac-40bb-bc5e-b9015cdb99bc
 
 ### ==================================================================
 ### 1. Root / Health Check Endpoint (Public)
@@ -62,7 +65,7 @@ GET {{baseUrl}}/api/v1/students/{{studentId}}
 ### 3.3 Update Student (Full Update - PUT)
 # Note: For cookie auth, browser/SPA sends the matching X-XSRF-TOKEN header.
 # For API clients sending Authorization: Bearer, CSRF header is not required.
-PUT {{baseUrl}}/api/v1/students/{{studentId}}
+PUT {{baseUrl}}/api/v1/students/{{fallbackStudentId}}
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrfToken}}
 
@@ -73,7 +76,7 @@ X-XSRF-TOKEN: {{xsrfToken}}
 
 ### 3.4 Patch Student (Partial Update - PATCH)
 # Note: For cookie auth, browser/SPA sends the matching X-XSRF-TOKEN header.
-PATCH {{baseUrl}}/api/v1/students/{{studentId}}
+PATCH {{baseUrl}}/api/v1/students/{{fallbackStudentId}}
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrfToken}}
 
@@ -83,7 +86,7 @@ X-XSRF-TOKEN: {{xsrfToken}}
 
 ### 3.5 Update Student Responsibility (PATCH - Class Representative Only)
 # Promotes or reassigns a student's institutional responsibility.
-PATCH {{baseUrl}}/api/v1/students/{{studentId}}/responsibility
+PATCH {{baseUrl}}/api/v1/students/{{fallbackStudentId}}/responsibility
 Content-Type: application/json
 X-XSRF-TOKEN: {{xsrfToken}}
 
@@ -141,7 +144,7 @@ GET {{baseUrl}}/api/v1/students/00000000-0000-0000-0000-000000000000
 
 ### 5.1 Delete Student By ID (DELETE)
 # Note: For cookie auth, browser/SPA sends the matching X-XSRF-TOKEN header.
-DELETE {{baseUrl}}/api/v1/students/{{studentId}}
+DELETE {{baseUrl}}/api/v1/students/{{fallbackStudentId}}
 X-XSRF-TOKEN: {{xsrfToken}}
 
 ### 5.2 Logout (POST)

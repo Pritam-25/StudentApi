@@ -94,7 +94,7 @@ JWT_SECRET=your-base64-encoded-256-bit-secret-key-here
 SPRING_PROFILES_ACTIVE=dev
 ```
 
-For production deployments, consult [.env.production](.env.production) and configure the environment variables in your deployment platform (Render, Railway, AWS, Docker, Kubernetes) with `SPRING_PROFILES_ACTIVE=prod`.
+For production deployments, configure the environment variables in your deployment platform (Render, Railway, AWS, Docker, Kubernetes) with `SPRING_PROFILES_ACTIVE=prod`.
 
 > **Note**: To generate a valid 256-bit Base64 secret key:
 >

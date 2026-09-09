@@ -474,8 +474,8 @@ class StudentIntegrationTest extends BaseIntegrationTest {
 
   @Test
   @DisplayName(
-      "PATCH /students/{id}/responsibility - Demoting a CLASS_REPRESENTATIVE immediately invalidates their elevated access")
-  void shouldImmediatelyInvalidateElevatedAccessWhenClassRepresentativeIsDemoted() {
+      "PATCH /students/{id}/responsibility - Demoting a CLASS_REPRESENTATIVE takes effect upon issuing subsequent access tokens")
+  void shouldReflectDemotionOnNextIssuedAccessTokenWhenClassRepresentativeIsDemoted() {
     Student admin = createClassRepresentative();
     Student targetRep =
         createTestStudent(
@@ -511,12 +511,22 @@ class StudentIntegrationTest extends BaseIntegrationTest {
             String.class);
     assertThat(demoteResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-    // 4. Target rep re-attempts access using their previously issued JWT token
-    ResponseEntity<String> subsequentResponse =
+    // 4. Existing token remains valid during its short-lived lifespan (stateless JWT)
+    ResponseEntity<String> existingTokenResponse =
         testRestTemplate.exchange(
             "/api/v1/students", HttpMethod.GET, new HttpEntity<>(targetRepHeaders), String.class);
+    assertThat(existingTokenResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-    // Access must immediately be denied with 403 Forbidden because current DB role is resolved
+    // 5. Subsequent access token issued after demotion reflects the new STUDENT role
+    Student updatedTarget = studentRepository.findById(targetRep.getId()).orElseThrow();
+    String newToken = createAccessToken(updatedTarget);
+    HttpHeaders newTokenHeaders = createBearerHeaders(newToken);
+
+    ResponseEntity<String> subsequentResponse =
+        testRestTemplate.exchange(
+            "/api/v1/students", HttpMethod.GET, new HttpEntity<>(newTokenHeaders), String.class);
+
+    // Access is denied with 403 Forbidden because newly issued token has ROLE_STUDENT
     assertThat(subsequentResponse.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     DocumentContext documentContext = JsonPath.parse(subsequentResponse.getBody());
     assertThat((String) documentContext.read("$.code")).isEqualTo("FORBIDDEN");
