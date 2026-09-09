@@ -46,6 +46,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<jacoco.version>0.8.14</jacoco.version>
+		<springdoc.version>3.1.1</springdoc.version>
 		<argLine/>
 	</properties>
 
@@ -70,6 +71,13 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-restclient</artifactId>
+		</dependency>
+
+		<!-- OpenAPI 3 Specification & Scalar Documentation -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-scalar</artifactId>
+			<version>${springdoc.version}</version>
 		</dependency>
 
 		<!-- ============================================================= -->

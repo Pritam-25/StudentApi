@@ -158,7 +158,8 @@ class SecurityIntegrationTest extends BaseIntegrationTest {
     }
     assertThat(xsrfToken).isNotNull();
 
-    // State-changing request supplying both the cookie and the matching X-XSRF-TOKEN header
+    // State-changing request supplying both the cookie and the matching
+    // X-XSRF-TOKEN header
     HttpHeaders putHeaders = createCookieHeaders(token, xsrfToken);
     UpdateStudentRequest update =
         new UpdateStudentRequest("Updated Auth User", "auth.user@example.com");

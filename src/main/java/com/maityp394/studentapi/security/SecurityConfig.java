@@ -15,6 +15,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
@@ -73,11 +74,16 @@ public class SecurityConfig {
           path("/api/v1/auth/login"),
           path("/api/v1/auth/register"));
 
+  private static final RequestMatcher OPENAPI_DOCS_PATHS =
+      new OrRequestMatcher(path("/scalar/**"), path("/v3/api-docs/**"), path("/v3/api-docs.yaml"));
+
   private static final RequestMatcher PUBLIC_PATHS =
-      new OrRequestMatcher(CSRF_EXEMPT_PATHS, LOGOUT_PATH);
+      new OrRequestMatcher(CSRF_EXEMPT_PATHS, LOGOUT_PATH, OPENAPI_DOCS_PATHS);
 
   /**
-   * Configures the main HTTP security filter chain.
+   * Configures the primary HTTP security filter chain that protects all incoming API requests.
+   *
+   * <p>Security layers configured:
    *
    * <ul>
    *   <li><b>CORS:</b> Uses application-defined CorsConfigurationSource defaults.
@@ -90,6 +96,10 @@ public class SecurityConfig {
    *       cookie.
    *   <li><b>Exception Handling:</b> RESTful 401 Unauthorized and 403 Forbidden JSON responses.
    * </ul>
+   *
+   * @param http the HTTP security builder to configure
+   * @param jwtAuthenticationConverter converter to extract user authorities from JWTs
+   * @return the built security filter chain
    */
   @Bean
   SecurityFilterChain securityFilterChain(
@@ -123,11 +133,22 @@ public class SecurityConfig {
   }
 
   /**
-   * OAuth2ResourceServerConfigurer auto-adds BearerTokenRequestMatcher to CsrfConfigurer's ignored
-   * list. Because our BearerTokenResolver also resolves tokens from the access_token cookie, the
-   * configurer API (.requireCsrfProtectionMatcher) would wrap our matcher with AND(ours,
-   * NOT(BearerTokenRequestMatcher)), disabling CSRF for cookie-authenticated requests. Setting the
-   * matcher directly on CsrfFilter via postProcess bypasses this.
+   * Customizes the CSRF filter to enforce protection specifically for cookie-based authentication.
+   *
+   * <p>Why this post-processor is required:
+   *
+   * <ul>
+   *   <li><b>Header Safety:</b> Requests using the {@code Authorization: Bearer} header cannot be
+   *       forged across sites by browsers and therefore do not require CSRF protection.
+   *   <li><b>Cookie Vulnerability:</b> Requests authenticating via the {@code access_token} cookie
+   *       ARE vulnerable to CSRF because browsers automatically attach cookies to cross-site
+   *       requests.
+   *   <li><b>Spring Security Bypass:</b> By default, Spring's OAuth2 Resource Server automatically
+   *       disables CSRF protection when a bearer token resolver is registered. This post-processor
+   *       directly configures the CSRF filter to keep cookie-authenticated requests protected.
+   * </ul>
+   *
+   * @return an object post-processor applying the custom CSRF matcher
    */
   private ObjectPostProcessor<OncePerRequestFilter> csrfFilterPostProcessor() {
     return new ObjectPostProcessor<>() {
@@ -155,26 +176,53 @@ public class SecurityConfig {
   }
 
   /**
-   * Dual-mode Bearer token resolver.
+   * Resolves the bearer token from the {@code Authorization} header, falling back to the {@code
+   * access_token} cookie if the header is absent or empty.
    *
-   * <p>Checks the standard {@code Authorization: Bearer <token>} header first. If absent, falls
-   * back to resolving the token from the {@code access_token} HTTP cookie.
+   * <p>If token resolution encounters an {@link OAuth2AuthenticationException} on a public
+   * endpoint, the exception is suppressed so unauthenticated requests can proceed.
+   *
+   * @return a {@link BearerTokenResolver} supporting both header and cookie token extraction
    */
   @Bean
   BearerTokenResolver bearerTokenResolver() {
     DefaultBearerTokenResolver delegate = new DefaultBearerTokenResolver();
     return request -> {
-      String token = delegate.resolve(request);
-      return token != null ? token : SecurityConstants.getAccessTokenFromCookie(request);
+      String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+      if (authHeader != null
+          && authHeader.regionMatches(true, 0, "Bearer", 0, 6)
+          && authHeader.substring(6).trim().isEmpty()) {
+        return SecurityConstants.getAccessTokenFromCookie(request);
+      }
+      try {
+        String token = delegate.resolve(request);
+        return token != null ? token : SecurityConstants.getAccessTokenFromCookie(request);
+      } catch (OAuth2AuthenticationException ex) {
+        if (PUBLIC_PATHS.matches(request)) {
+          return null;
+        }
+        throw ex;
+      }
     };
   }
 
   /**
-   * Configures the {@link AuthenticationManager} for username/password authentication (e.g.,
-   * login).
+   * Configures the central authentication manager responsible for verifying user login credentials.
    *
-   * <p>Uses a {@link DaoAuthenticationProvider} wired with the application's {@link
-   * UserDetailsService} and {@link PasswordEncoder}.
+   * <p>Authentication process:
+   *
+   * <ul>
+   *   <li><b>User Lookup:</b> Retrieves user account details and the stored password hash from the
+   *       database using the configured user details service.
+   *   <li><b>Password Verification:</b> Compares the raw password supplied during login against the
+   *       stored hash using the password encoder (e.g., BCrypt).
+   *   <li><b>Authentication Result:</b> Produces a fully authenticated token on success, or throws
+   *       an authentication exception if the username or password is invalid.
+   * </ul>
+   *
+   * @param userDetailsService service used to load user accounts from the database
+   * @param passwordEncoder the encoder used to verify password hashes
+   * @return the configured authentication manager
    */
   @Bean
   AuthenticationManager authenticationManager(
@@ -185,11 +233,21 @@ public class SecurityConfig {
   }
 
   /**
-   * Configures the {@link JwtAuthenticationConverter} used by the OAuth2 resource server.
+   * Configures how claims inside a verified JWT are mapped into Spring Security user permissions.
    *
-   * <p>Applies {@link JwtGrantedAuthoritiesConverter} to extract roles and authorities from the
-   * {@code authorities} claim of decoded JWTs into Spring Security {@link
-   * org.springframework.security.core.GrantedAuthority} collections.
+   * <p>Authority conversion behavior:
+   *
+   * <ul>
+   *   <li><b>Custom Claim Extraction:</b> Reads user roles directly from the {@code authorities}
+   *       claim array inside the JWT rather than the default {@code scope} claim.
+   *   <li><b>No Prefix Modification:</b> Clears the default {@code SCOPE_} prefix so role names
+   *       like {@code ROLE_STUDENT} and {@code ROLE_ADMIN} are preserved exactly as defined.
+   *   <li><b>Method Security Support:</b> Allows security annotations such as
+   *       {@code @PreAuthorize("hasRole('ADMIN')")} to evaluate role checks without naming
+   *       conflicts.
+   * </ul>
+   *
+   * @return the configured JWT authentication converter
    */
   @Bean
   JwtAuthenticationConverter jwtAuthenticationConverter() {

@@ -2,6 +2,7 @@ package com.maityp394.studentapi.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.maityp394.studentapi.entity.Responsibility;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -17,9 +18,15 @@ import java.util.UUID;
  */
 @JsonPropertyOrder({"id", "name", "email", "responsibility", "createdAt", "updatedAt"})
 public record StudentResponse(
-    UUID id,
-    String name,
-    String email,
-    Responsibility responsibility,
-    Instant createdAt,
-    Instant updatedAt) {}
+    @Schema(example = "43e3966c-69c7-422d-9d86-2623e1476221") //
+        UUID id,
+    @Schema(example = "Pritam Maity") //
+        String name,
+    @Schema(example = "pritam@example.com") //
+        String email,
+    @Schema(example = "STUDENT") //
+        Responsibility responsibility,
+    @Schema(example = "2026-09-09T10:00:00Z") //
+        Instant createdAt,
+    @Schema(example = "2026-09-09T10:00:00Z") //
+        Instant updatedAt) {}

@@ -405,9 +405,8 @@ class StudentIntegrationTest extends BaseIntegrationTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     DocumentContext json = JsonPath.parse(response.getBody());
     List<String> createdTimestamps = json.read("$.data[*].createdAt");
-    assertThat(createdTimestamps).hasSize(3);
     // Verify non-null and non-blank
-    assertThat(createdTimestamps).allSatisfy(ts -> assertThat(ts).isNotBlank());
+    assertThat(createdTimestamps).hasSize(3).allSatisfy(ts -> assertThat(ts).isNotBlank());
   }
 
   @Test

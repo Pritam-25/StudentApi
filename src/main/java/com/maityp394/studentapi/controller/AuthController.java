@@ -8,12 +8,15 @@ import com.maityp394.studentapi.dto.response.AuthResult;
 import com.maityp394.studentapi.dto.response.StudentResponse;
 import com.maityp394.studentapi.security.SecurityConstants;
 import com.maityp394.studentapi.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -29,6 +33,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
+@Tag(name = "Auth", description = "Authentication endpoints")
 public class AuthController {
 
   private final AuthService authService;
@@ -43,6 +48,10 @@ public class AuthController {
    * @return HTTP 201 Created with student details and Set-Cookie header
    */
   @PostMapping("/register")
+  @ResponseStatus(HttpStatus.CREATED)
+  @Operation(
+      summary = "Register a new student account",
+      security = {})
   public ResponseEntity<ApiResponse<StudentResponse>> register(
       @Valid @RequestBody RegisterRequest request, UriComponentsBuilder ucb) {
     AuthResult result = authService.register(request);
@@ -62,6 +71,9 @@ public class AuthController {
    * @return HTTP 200 OK with student details and Set-Cookie header
    */
   @PostMapping("/login")
+  @Operation(
+      summary = "Authenticate student credentials",
+      security = {})
   public ResponseEntity<ApiResponse<StudentResponse>> login(
       @Valid @RequestBody LoginRequest request) {
     AuthResult result = authService.login(request);
@@ -89,6 +101,7 @@ public class AuthController {
    * @return HTTP 200 OK with the student profile response
    */
   @GetMapping("/me")
+  @Operation(summary = "Get current authenticated student profile")
   public ResponseEntity<ApiResponse<StudentResponse>> me(@AuthenticationPrincipal Jwt jwt) {
     UUID userId = UUID.fromString(Objects.requireNonNull(jwt.getSubject()));
     StudentResponse response = authService.getCurrentUser(userId);
@@ -101,6 +114,9 @@ public class AuthController {
    * @return HTTP 200 OK confirming logout with expired cookie
    */
   @PostMapping("/logout")
+  @Operation(
+      summary = "Log out and invalidate session cookie",
+      security = {})
   public ResponseEntity<ApiResponse<Void>> logout() {
 
     ResponseCookie cleanupCookie =

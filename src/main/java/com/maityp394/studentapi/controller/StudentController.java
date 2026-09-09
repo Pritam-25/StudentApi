@@ -9,11 +9,14 @@ import com.maityp394.studentapi.entity.Responsibility;
 import com.maityp394.studentapi.exception.ForbiddenException;
 import com.maityp394.studentapi.security.IsClassRepresentative;
 import com.maityp394.studentapi.service.StudentService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -26,6 +29,9 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/v1/students")
+@Tag(
+    name = "Students",
+    description = "Student resource CRUD and responsibility management endpoints")
 public class StudentController {
 
   private final StudentService studentService;
@@ -49,6 +55,7 @@ public class StudentController {
    */
   @GetMapping
   @IsClassRepresentative
+  @Operation(summary = "Get paginated list of students (Class Representative only)")
   public ResponseEntity<ApiResponse<List<StudentResponse>>> getStudents(
       @RequestParam(required = false) Responsibility responsibility,
       @PageableDefault(size = 5, sort = "name") Pageable pageable) {
@@ -65,6 +72,7 @@ public class StudentController {
    * @return a {@link ResponseEntity} containing the {@link StudentResponse}
    */
   @GetMapping("/{id}")
+  @Operation(summary = "Get student by ID")
   public ResponseEntity<ApiResponse<StudentResponse>> getStudentById(@PathVariable UUID id) {
 
     return ResponseEntity.ok(
@@ -79,6 +87,7 @@ public class StudentController {
    * @return a {@link ResponseEntity} containing the updated {@link StudentResponse}
    */
   @PutMapping("/{id}")
+  @Operation(summary = "Fully update student information")
   public ResponseEntity<ApiResponse<StudentResponse>> updateStudent(
       @PathVariable UUID id,
       @Valid @RequestBody UpdateStudentRequest request,
@@ -99,6 +108,7 @@ public class StudentController {
    * @return a {@link ResponseEntity} containing the partially updated {@link StudentResponse}
    */
   @PatchMapping("/{id}")
+  @Operation(summary = "Partially update student information")
   public ResponseEntity<ApiResponse<StudentResponse>> patchStudent(
       @PathVariable UUID id,
       @Valid @RequestBody PatchStudentRequest request,
@@ -118,6 +128,8 @@ public class StudentController {
    * @return a {@link ResponseEntity} with status {@code 204 No Content} and an empty response body
    */
   @DeleteMapping("/{id}")
+  @ResponseStatus(HttpStatus.NO_CONTENT)
+  @Operation(summary = "Delete student by ID")
   public ResponseEntity<Void> deleteStudent(
       @PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
 
@@ -137,6 +149,7 @@ public class StudentController {
    */
   @PatchMapping("/{id}/responsibility")
   @IsClassRepresentative
+  @Operation(summary = "Update student responsibility (Class Representative only)")
   public ResponseEntity<ApiResponse<StudentResponse>> updateResponsibility(
       @PathVariable UUID id, @Valid @RequestBody UpdateResponsibilityRequest request) {
 

@@ -24,8 +24,7 @@ public final class SecurityConstants {
    *     false}
    */
   public static boolean hasAccessTokenCookie(HttpServletRequest request) {
-    Cookie cookie = WebUtils.getCookie(request, ACCESS_TOKEN_COOKIE);
-    return cookie != null && cookie.getValue() != null && !cookie.getValue().isBlank();
+    return getAccessTokenFromCookie(request) != null;
   }
 
   /**
