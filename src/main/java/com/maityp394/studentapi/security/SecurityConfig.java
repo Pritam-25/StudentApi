@@ -15,7 +15,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
@@ -179,8 +178,8 @@ public class SecurityConfig {
    * Resolves the bearer token from the {@code Authorization} header, falling back to the {@code
    * access_token} cookie if the header is absent or empty.
    *
-   * <p>If token resolution encounters an {@link OAuth2AuthenticationException} on a public
-   * endpoint, the exception is suppressed so unauthenticated requests can proceed.
+   * <p>Public endpoints bypass token resolution entirely so invalid or expired tokens attached by
+   * clients (e.g. browser interceptors) are ignored and do not trigger unexpected 401s.
    *
    * @return a {@link BearerTokenResolver} supporting both header and cookie token extraction
    */
@@ -188,21 +187,17 @@ public class SecurityConfig {
   BearerTokenResolver bearerTokenResolver() {
     DefaultBearerTokenResolver delegate = new DefaultBearerTokenResolver();
     return request -> {
+      if (PUBLIC_PATHS.matches(request)) {
+        return null;
+      }
       String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
       if (authHeader != null
           && authHeader.regionMatches(true, 0, "Bearer", 0, 6)
           && authHeader.substring(6).trim().isEmpty()) {
         return SecurityConstants.getAccessTokenFromCookie(request);
       }
-      try {
-        String token = delegate.resolve(request);
-        return token != null ? token : SecurityConstants.getAccessTokenFromCookie(request);
-      } catch (OAuth2AuthenticationException ex) {
-        if (PUBLIC_PATHS.matches(request)) {
-          return null;
-        }
-        throw ex;
-      }
+      String token = delegate.resolve(request);
+      return token != null ? token : SecurityConstants.getAccessTokenFromCookie(request);
     };
   }
 

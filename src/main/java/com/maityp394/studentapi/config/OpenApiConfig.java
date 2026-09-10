@@ -23,7 +23,7 @@ public class OpenApiConfig {
   public static final String COOKIE_AUTH = "cookieAuth";
 
   @Bean
-  public OpenAPI studentOpenAPI() {
+  OpenAPI studentOpenAPI() {
     return new OpenAPI()
         .info(
             new Info()
@@ -35,7 +35,7 @@ public class OpenApiConfig {
                     new Contact()
                         .name("Pritam Maity")
                         .url("https://github.com/Pritam-25/StudentApi"))
-                .license(new License().name("UNLICENSED")))
+                .license(new License().name("MIT").identifier("MIT")))
         .components(
             new Components()
                 .addSecuritySchemes(

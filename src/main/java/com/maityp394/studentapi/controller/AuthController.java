@@ -9,6 +9,7 @@ import com.maityp394.studentapi.dto.response.StudentResponse;
 import com.maityp394.studentapi.security.SecurityConstants;
 import com.maityp394.studentapi.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -49,9 +50,8 @@ public class AuthController {
    */
   @PostMapping("/register")
   @ResponseStatus(HttpStatus.CREATED)
-  @Operation(
-      summary = "Register a new student account",
-      security = {})
+  @Operation(summary = "Register a new student account")
+  @SecurityRequirements
   public ResponseEntity<ApiResponse<StudentResponse>> register(
       @Valid @RequestBody RegisterRequest request, UriComponentsBuilder ucb) {
     AuthResult result = authService.register(request);
@@ -71,9 +71,8 @@ public class AuthController {
    * @return HTTP 200 OK with student details and Set-Cookie header
    */
   @PostMapping("/login")
-  @Operation(
-      summary = "Authenticate student credentials",
-      security = {})
+  @Operation(summary = "Authenticate student credentials")
+  @SecurityRequirements
   public ResponseEntity<ApiResponse<StudentResponse>> login(
       @Valid @RequestBody LoginRequest request) {
     AuthResult result = authService.login(request);
@@ -114,9 +113,8 @@ public class AuthController {
    * @return HTTP 200 OK confirming logout with expired cookie
    */
   @PostMapping("/logout")
-  @Operation(
-      summary = "Log out and invalidate session cookie",
-      security = {})
+  @Operation(summary = "Log out and invalidate session cookie")
+  @SecurityRequirements
   public ResponseEntity<ApiResponse<Void>> logout() {
 
     ResponseCookie cleanupCookie =
