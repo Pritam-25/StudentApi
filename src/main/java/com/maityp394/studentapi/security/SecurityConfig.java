@@ -1,6 +1,7 @@
 package com.maityp394.studentapi.security;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -44,17 +45,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
   private final RestAuthenticationEntryPoint authenticationEntryPoint;
   private final RestAccessDeniedHandler accessDeniedHandler;
-
-  public SecurityConfig(
-      RestAuthenticationEntryPoint authenticationEntryPoint,
-      RestAccessDeniedHandler accessDeniedHandler) {
-    this.authenticationEntryPoint = authenticationEntryPoint;
-    this.accessDeniedHandler = accessDeniedHandler;
-  }
 
   private static RequestMatcher path(String pattern) {
     return PathPatternRequestMatcher.pathPattern(pattern);

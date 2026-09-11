@@ -44,11 +44,7 @@ public abstract class BaseIntegrationTest {
    */
   protected Student createTestStudent(
       String name, String email, String rawPassword, Responsibility responsibility) {
-    Student student = new Student();
-    student.setName(name);
-    student.setEmail(email);
-    student.setPasswordHash(passwordEncoder.encode(rawPassword));
-    student.setResponsibility(responsibility);
+    Student student = new Student(name, email, passwordEncoder.encode(rawPassword), responsibility);
     return studentRepository.save(student);
   }
 

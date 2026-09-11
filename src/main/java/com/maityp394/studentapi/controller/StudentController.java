@@ -4,6 +4,7 @@ import com.maityp394.studentapi.dto.request.PatchStudentRequest;
 import com.maityp394.studentapi.dto.request.UpdateResponsibilityRequest;
 import com.maityp394.studentapi.dto.request.UpdateStudentRequest;
 import com.maityp394.studentapi.dto.response.ApiResponse;
+import com.maityp394.studentapi.dto.response.PageResponse;
 import com.maityp394.studentapi.dto.response.StudentResponse;
 import com.maityp394.studentapi.entity.Responsibility;
 import com.maityp394.studentapi.exception.ForbiddenException;
@@ -12,8 +13,8 @@ import com.maityp394.studentapi.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
@@ -29,21 +30,13 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping("/api/v1/students")
+@RequiredArgsConstructor
 @Tag(
     name = "Students",
     description = "Student resource CRUD and responsibility management endpoints")
 public class StudentController {
 
   private final StudentService studentService;
-
-  /**
-   * Constructs a new {@code StudentController} with the required {@link StudentService}.
-   *
-   * @param studentService the service handling student business logic
-   */
-  public StudentController(StudentService studentService) {
-    this.studentService = studentService;
-  }
 
   /**
    * Retrieves a paginated list of students, optionally filtered by responsibility. Only accessible
@@ -56,11 +49,12 @@ public class StudentController {
   @GetMapping
   @IsClassRepresentative
   @Operation(summary = "Get paginated list of students (Class Representative only)")
-  public ResponseEntity<ApiResponse<List<StudentResponse>>> getStudents(
+  public ResponseEntity<ApiResponse<PageResponse<StudentResponse>>> getStudents(
       @RequestParam(required = false) Responsibility responsibility,
       @PageableDefault(size = 5, sort = "name") Pageable pageable) {
 
-    List<StudentResponse> students = studentService.getAllStudents(responsibility, pageable);
+    PageResponse<StudentResponse> students =
+        studentService.getAllStudents(responsibility, pageable);
 
     return ResponseEntity.ok(new ApiResponse<>("Students fetched successfully", students));
   }

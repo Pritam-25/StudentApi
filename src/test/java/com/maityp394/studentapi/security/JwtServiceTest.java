@@ -42,11 +42,9 @@ class JwtServiceTest {
 
     JwtService jwtService = new JwtService(encoder, properties);
 
-    Student student = new Student();
+    Student student =
+        new Student("Test Student", "test@example.com", "hash", Responsibility.STUDENT);
     student.setId(UUID.randomUUID());
-    student.setName("Test Student");
-    student.setEmail("test@example.com");
-    student.setResponsibility(Responsibility.STUDENT);
 
     String token = jwtService.generateAccessToken(student);
 

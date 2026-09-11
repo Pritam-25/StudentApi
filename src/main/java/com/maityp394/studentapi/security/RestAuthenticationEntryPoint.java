@@ -5,6 +5,7 @@ import com.maityp394.studentapi.exception.ProblemDetailFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +29,7 @@ import tools.jackson.databind.ObjectMapper;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
   private static final String INVALID_TOKEN_CHALLENGE =
@@ -35,10 +37,6 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
   private static final String DEFAULT_BEARER_CHALLENGE = "Bearer";
 
   private final ObjectMapper objectMapper;
-
-  public RestAuthenticationEntryPoint(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
-  }
 
   @Override
   public void commence(

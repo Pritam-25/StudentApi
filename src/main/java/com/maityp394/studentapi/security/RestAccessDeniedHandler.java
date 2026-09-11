@@ -5,6 +5,7 @@ import com.maityp394.studentapi.exception.ProblemDetailFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.http.MediaType;
@@ -24,13 +25,10 @@ import tools.jackson.databind.ObjectMapper;
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class RestAccessDeniedHandler implements AccessDeniedHandler {
 
   private final ObjectMapper objectMapper;
-
-  public RestAccessDeniedHandler(ObjectMapper objectMapper) {
-    this.objectMapper = objectMapper;
-  }
 
   @Override
   public void handle(

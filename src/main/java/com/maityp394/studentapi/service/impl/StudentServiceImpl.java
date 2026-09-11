@@ -2,6 +2,7 @@ package com.maityp394.studentapi.service.impl;
 
 import com.maityp394.studentapi.dto.request.PatchStudentRequest;
 import com.maityp394.studentapi.dto.request.UpdateStudentRequest;
+import com.maityp394.studentapi.dto.response.PageResponse;
 import com.maityp394.studentapi.dto.response.StudentResponse;
 import com.maityp394.studentapi.entity.Responsibility;
 import com.maityp394.studentapi.entity.Student;
@@ -11,7 +12,6 @@ import com.maityp394.studentapi.exception.ResourceNotFoundException;
 import com.maityp394.studentapi.mapper.StudentMapper;
 import com.maityp394.studentapi.repository.StudentRepository;
 import com.maityp394.studentapi.service.StudentService;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class StudentServiceImpl implements StudentService {
 
   private final StudentRepository studentRepository;
@@ -36,7 +36,6 @@ public class StudentServiceImpl implements StudentService {
 
   /** {@inheritDoc} */
   @Override
-  @Transactional(readOnly = true)
   public StudentResponse getStudentById(UUID id) {
     Student student = findStudentByIdOrThrow(id);
     log.info("Student fetched successfully: id={}", id);
@@ -45,8 +44,8 @@ public class StudentServiceImpl implements StudentService {
 
   /** {@inheritDoc} */
   @Override
-  @Transactional(readOnly = true)
-  public List<StudentResponse> getAllStudents(Responsibility responsibility, Pageable pageable) {
+  public PageResponse<StudentResponse> getAllStudents(
+      Responsibility responsibility, Pageable pageable) {
     PageRequest pageRequest =
         PageRequest.of(
             pageable.getPageNumber(),
@@ -59,11 +58,12 @@ public class StudentServiceImpl implements StudentService {
             : studentRepository.findAll(pageRequest);
 
     log.info("Students fetched successfully: count={}", page.getNumberOfElements());
-    return page.map(studentMapper::toResponse).getContent();
+    return PageResponse.from(page.map(studentMapper::toResponse));
   }
 
   /** {@inheritDoc} */
   @Override
+  @Transactional
   public StudentResponse updateStudent(UUID id, UpdateStudentRequest request) {
     Student student = findStudentByIdOrThrow(id);
     String email = request.email();
@@ -73,8 +73,7 @@ public class StudentServiceImpl implements StudentService {
           ErrorCode.STUDENT_EMAIL_ALREADY_EXISTS, "Student already exists with email: " + email);
     }
 
-    student.setName(request.name());
-    student.setEmail(email);
+    student.updateProfile(request.name(), email);
 
     Student updatedStudent = studentRepository.saveAndFlush(student);
     log.info("Student updated successfully with id: {}", id);
@@ -83,6 +82,7 @@ public class StudentServiceImpl implements StudentService {
 
   /** {@inheritDoc} */
   @Override
+  @Transactional
   public StudentResponse patchStudent(UUID id, PatchStudentRequest request) {
     Student student = findStudentByIdOrThrow(id);
 
@@ -106,6 +106,7 @@ public class StudentServiceImpl implements StudentService {
 
   /** {@inheritDoc} */
   @Override
+  @Transactional
   public void deleteStudent(UUID id) {
     Student student = findStudentByIdOrThrow(id);
     studentRepository.delete(student);
@@ -114,9 +115,10 @@ public class StudentServiceImpl implements StudentService {
 
   /** {@inheritDoc} */
   @Override
+  @Transactional
   public StudentResponse updateResponsibility(UUID id, Responsibility responsibility) {
     Student student = findStudentByIdOrThrow(id);
-    student.setResponsibility(responsibility);
+    student.assignResponsibility(responsibility);
     Student saved = studentRepository.saveAndFlush(student);
     log.info(
         "Student responsibility updated successfully: id={}, responsibility={}",

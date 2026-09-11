@@ -19,12 +19,7 @@ public class StudentMapper {
    * @return a newly populated {@link Student} entity with the hashed password
    */
   public Student toEntity(RegisterRequest req, String passwordHash) {
-    Student student = new Student();
-    student.setName(req.name());
-    student.setEmail(req.email());
-    student.setPasswordHash(passwordHash);
-    student.setResponsibility(Responsibility.STUDENT);
-    return student;
+    return new Student(req.name(), req.email(), passwordHash, Responsibility.STUDENT);
   }
 
   /**

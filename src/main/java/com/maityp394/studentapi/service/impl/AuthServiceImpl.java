@@ -30,7 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
@@ -42,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
 
   /** {@inheritDoc} */
   @Override
+  @Transactional
   public AuthResult register(RegisterRequest request) {
     if (studentRepository.existsByEmail(request.email())) {
       throw new DuplicateResourceException(ErrorCode.STUDENT_EMAIL_ALREADY_EXISTS);
@@ -76,7 +77,6 @@ public class AuthServiceImpl implements AuthService {
 
   /** {@inheritDoc} */
   @Override
-  @Transactional(readOnly = true)
   public StudentResponse getCurrentUser(UUID studentId) {
     Student student =
         studentRepository

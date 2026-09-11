@@ -201,10 +201,8 @@ class StudentIntegrationTest extends BaseIntegrationTest {
       "DELETE /students/{id} - Should return 404 Not Found when deleting non-existent student owned by caller")
   void shouldReturnNotFoundWhenDeletingNonExistentStudent() {
     UUID nonExistentId = UUID.fromString("00000000-0000-0000-0000-000000000000");
-    Student phantom = new Student();
+    Student phantom = new Student("Phantom", "phantom@example.com", "hash", Responsibility.STUDENT);
     phantom.setId(nonExistentId);
-    phantom.setEmail("phantom@example.com");
-    phantom.setResponsibility(Responsibility.STUDENT);
     String token = createAccessToken(phantom);
     HttpHeaders headers = createBearerHeaders(token);
 
@@ -342,10 +340,17 @@ class StudentIntegrationTest extends BaseIntegrationTest {
     DocumentContext documentContext = JsonPath.parse(response.getBody());
     assertThat((String) documentContext.read("$.message"))
         .isEqualTo("Students fetched successfully");
-    List<?> students = documentContext.read("$.data");
+    List<?> students = documentContext.read("$.data.content");
     assertThat(students).hasSize(3);
-    assertThat((String) documentContext.read("$.data[0].createdAt")).isNotBlank();
-    assertThat((String) documentContext.read("$.data[0].updatedAt")).isNotBlank();
+    assertThat((String) documentContext.read("$.data.content[0].createdAt")).isNotBlank();
+    assertThat((String) documentContext.read("$.data.content[0].updatedAt")).isNotBlank();
+    assertThat((Integer) documentContext.read("$.data.pageNumber")).isZero();
+    assertThat((Integer) documentContext.read("$.data.pageSize")).isEqualTo(5);
+    assertThat((Integer) documentContext.read("$.data.totalElements")).isEqualTo(3);
+    assertThat((Integer) documentContext.read("$.data.totalPages")).isEqualTo(1);
+    assertThat((Boolean) documentContext.read("$.data.isFirst")).isTrue();
+    assertThat((Boolean) documentContext.read("$.data.isLast")).isTrue();
+    assertThat((Boolean) documentContext.read("$.data.hasNext")).isFalse();
   }
 
   @Test
@@ -368,7 +373,7 @@ class StudentIntegrationTest extends BaseIntegrationTest {
 
     assertThat(studentFilterResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
     DocumentContext studentJson = JsonPath.parse(studentFilterResponse.getBody());
-    List<String> studentRoles = studentJson.read("$.data[*].responsibility");
+    List<String> studentRoles = studentJson.read("$.data.content[*].responsibility");
     assertThat(studentRoles).containsOnly("STUDENT").hasSize(2);
 
     // Filter by CLASS_REPRESENTATIVE
@@ -381,7 +386,7 @@ class StudentIntegrationTest extends BaseIntegrationTest {
 
     assertThat(crFilterResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
     DocumentContext crJson = JsonPath.parse(crFilterResponse.getBody());
-    List<String> crRoles = crJson.read("$.data[*].responsibility");
+    List<String> crRoles = crJson.read("$.data.content[*].responsibility");
     assertThat(crRoles).containsOnly("CLASS_REPRESENTATIVE").hasSize(1);
   }
 
@@ -404,7 +409,7 @@ class StudentIntegrationTest extends BaseIntegrationTest {
 
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     DocumentContext json = JsonPath.parse(response.getBody());
-    List<String> createdTimestamps = json.read("$.data[*].createdAt");
+    List<String> createdTimestamps = json.read("$.data.content[*].createdAt");
     // Verify non-null and non-blank
     assertThat(createdTimestamps).hasSize(3).allSatisfy(ts -> assertThat(ts).isNotBlank());
   }
