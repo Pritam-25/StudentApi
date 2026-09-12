@@ -116,23 +116,20 @@ public class Student {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof Student student)) {
       return false;
     }
-    Student student = (Student) o;
-    return id != null && id.equals(student.id);
+    return id != null && id.equals(student.getId());
   }
 
   /**
    * Returns a fixed class-level hash code.
    *
    * <p>Guarantees that the hash code remains constant across all JPA lifecycle transitions
-   * (transient, persisted, detached). This prevents collection corruption when an entity is stored
-   * in a {@link java.util.HashSet} or {@link java.util.HashMap} before its database ID is
-   * generated.
+   * (transient, persisted, detached) and between entities and Hibernate proxies.
    */
   @Override
   public int hashCode() {
-    return getClass().hashCode();
+    return Student.class.hashCode();
   }
 }
