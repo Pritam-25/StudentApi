@@ -10,49 +10,49 @@ info:
     identifier: MIT
   version: 1.0.0
 servers:
-  - url: http://localhost:8000
-    description: Generated server url
+- url: http://localhost:8000
+  description: Generated server url
 security:
-  - bearerAuth: []
-  - cookieAuth: []
+- bearerAuth: []
+- cookieAuth: []
 tags:
-  - name: Students
-    description: Student resource CRUD and responsibility management endpoints
-  - name: Auth
-    description: Authentication and session endpoints
+- name: Students
+  description: Student resource CRUD and responsibility management endpoints
+- name: Auth
+  description: Authentication and session endpoints
 paths:
   /api/v1/students/{id}:
     get:
       tags:
-        - Students
+      - Students
       summary: Get student by ID
       operationId: getStudentById
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           description: OK
           content:
-            "*/*":
+            '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseStudentResponse"
     put:
       tags:
-        - Students
+      - Students
       summary: Fully update student information
       operationId: updateStudent
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
@@ -63,36 +63,36 @@ paths:
         "200":
           description: OK
           content:
-            "*/*":
+            '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseStudentResponse"
     delete:
       tags:
-        - Students
+      - Students
       summary: Delete student by ID
       operationId: deleteStudent
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
         "204":
           description: No Content
     patch:
       tags:
-        - Students
+      - Students
       summary: Partially update student information
       operationId: patchStudent
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
@@ -103,13 +103,13 @@ paths:
         "200":
           description: OK
           content:
-            "*/*":
+            '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseStudentResponse"
   /api/v1/auth/register:
     post:
       tags:
-        - Auth
+      - Auth
       summary: Register a new student account
       operationId: register
       requestBody:
@@ -122,56 +122,58 @@ paths:
         "201":
           description: Created
           content:
-            "*/*":
+            '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseStudentResponse"
-      security: []
+      security:
+      - {}
   /api/v1/auth/refresh:
     post:
       tags:
-        - Auth
+      - Auth
       summary: Rotate refresh token and issue new session tokens
       operationId: refresh
       responses:
         "200":
           description: OK
           content:
-            "*/*":
+            '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseVoid"
       security:
-        - refreshCookieAuth: []
+      - refreshCookieAuth: []
   /api/v1/auth/logout:
     post:
       tags:
-        - Auth
+      - Auth
       summary: Log out current device session and invalidate cookies
       operationId: logout
       responses:
         "200":
           description: OK
           content:
-            "*/*":
+            '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseVoid"
-      security: []
+      security:
+      - {}
   /api/v1/auth/logout-all:
     post:
       tags:
-        - Auth
+      - Auth
       summary: Log out all sessions across all devices for the current user
       operationId: logoutAll
       responses:
         "200":
           description: OK
           content:
-            "*/*":
+            '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseVoid"
   /api/v1/auth/login:
     post:
       tags:
-        - Auth
+      - Auth
       summary: Authenticate student credentials
       operationId: login
       requestBody:
@@ -184,23 +186,24 @@ paths:
         "200":
           description: OK
           content:
-            "*/*":
+            '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseStudentResponse"
-      security: []
+      security:
+      - {}
   /api/v1/students/{id}/responsibility:
     patch:
       tags:
-        - Students
+      - Students
       summary: Update student responsibility (Class Representative only)
       operationId: updateResponsibility
       parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
       requestBody:
         content:
           application/json:
@@ -211,59 +214,59 @@ paths:
         "200":
           description: OK
           content:
-            "*/*":
+            '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseStudentResponse"
   /api/v1/students:
     get:
       tags:
-        - Students
+      - Students
       summary: Get paginated list of students (Class Representative only)
       operationId: getStudents
       parameters:
-        - name: responsibility
-          in: query
-          required: false
-          schema:
-            type: string
-            enum:
-              - STUDENT
-              - CLASS_REPRESENTATIVE
-        - name: pageable
-          in: query
-          required: true
-          schema:
-            $ref: "#/components/schemas/Pageable"
+      - name: responsibility
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - STUDENT
+          - CLASS_REPRESENTATIVE
+      - name: pageable
+        in: query
+        required: true
+        schema:
+          $ref: "#/components/schemas/Pageable"
       responses:
         "200":
           description: OK
           content:
-            "*/*":
+            '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponsePageResponseStudentResponse"
   /api/v1/auth/me:
     get:
       tags:
-        - Auth
+      - Auth
       summary: Get current authenticated student profile
       operationId: me
       responses:
         "200":
           description: OK
           content:
-            "*/*":
+            '*/*':
               schema:
                 $ref: "#/components/schemas/ApiResponseStudentResponse"
   /:
     get:
       tags:
-        - root-controller
+      - root-controller
       operationId: root
       responses:
         "200":
           description: OK
           content:
-            "*/*":
+            '*/*':
               schema:
                 type: string
 components:
@@ -282,8 +285,8 @@ components:
           example: pritam.new@example.com
           minLength: 1
       required:
-        - email
-        - name
+      - email
+      - name
     ApiResponseStudentResponse:
       type: object
       properties:
@@ -310,8 +313,8 @@ components:
         responsibility:
           type: string
           enum:
-            - STUDENT
-            - CLASS_REPRESENTATIVE
+          - STUDENT
+          - CLASS_REPRESENTATIVE
           example: STUDENT
         createdAt:
           type: string
@@ -349,9 +352,9 @@ components:
           minLength: 8
           pattern: "^(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9\\s]).{8,30}$"
       required:
-        - email
-        - name
-        - password
+      - email
+      - name
+      - password
     ApiResponseVoid:
       type: object
       properties:
@@ -375,8 +378,8 @@ components:
           example: Password@123
           minLength: 1
       required:
-        - email
-        - password
+      - email
+      - password
     PatchStudentRequest:
       type: object
       properties:
@@ -395,11 +398,11 @@ components:
         responsibility:
           type: string
           enum:
-            - STUDENT
-            - CLASS_REPRESENTATIVE
+          - STUDENT
+          - CLASS_REPRESENTATIVE
           example: CLASS_REPRESENTATIVE
       required:
-        - responsibility
+      - responsibility
     Pageable:
       type: object
       properties:

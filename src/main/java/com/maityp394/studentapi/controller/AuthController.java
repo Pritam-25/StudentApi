@@ -14,7 +14,6 @@ import com.maityp394.studentapi.security.token.AuthTokens;
 import com.maityp394.studentapi.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
-import io.swagger.v3.oas.annotations.security.SecurityRequirements;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -59,7 +58,6 @@ public class AuthController {
   @PostMapping("/register")
   @ResponseStatus(HttpStatus.CREATED)
   @Operation(summary = "Register a new student account")
-  @SecurityRequirements
   public ResponseEntity<ApiResponse<StudentResponse>> register(
       @Valid @RequestBody RegisterRequest request,
       HttpServletRequest servletRequest,
@@ -84,7 +82,6 @@ public class AuthController {
    */
   @PostMapping("/login")
   @Operation(summary = "Authenticate student credentials")
-  @SecurityRequirements
   public ResponseEntity<ApiResponse<StudentResponse>> login(
       @Valid @RequestBody LoginRequest request, HttpServletRequest servletRequest) {
     ClientInfo client = extractClientInfo(servletRequest);
@@ -142,7 +139,6 @@ public class AuthController {
    */
   @PostMapping("/logout")
   @Operation(summary = "Log out current device session and invalidate cookies")
-  @SecurityRequirements
   public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request) {
     String rawRefreshToken = SecurityConstants.getRefreshTokenFromCookie(request);
     authService.logout(rawRefreshToken);
