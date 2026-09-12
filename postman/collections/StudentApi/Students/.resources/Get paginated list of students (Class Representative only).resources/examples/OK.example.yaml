@@ -1,0 +1,147 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/students?responsibility=CLASS_REPRESENTATIVE&page=4863&size=9717&sort=string,string"
+  method: GET
+  headers:
+    - key: Accept
+      value: "*/*"
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  queryParams:
+    responsibility: CLASS_REPRESENTATIVE
+    page: "4863"
+    size: "9717"
+    sort: string,string
+  body:
+    type: text
+    content: ""
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: "*/*"
+  body:
+    type: text
+    content: |-
+      {
+        "message": "string",
+        "data": {
+          "content": [
+            {
+              "id": "43e3966c-69c7-422d-9d86-2623e1476221",
+              "name": "Pritam Maity",
+              "email": "pritam@example.com",
+              "responsibility": "STUDENT",
+              "createdAt": "2026-09-09T10:00:00Z",
+              "updatedAt": "2026-09-09T10:00:00Z"
+            },
+            {
+              "id": "43e3966c-69c7-422d-9d86-2623e1476221",
+              "name": "Pritam Maity",
+              "email": "pritam@example.com",
+              "responsibility": "STUDENT",
+              "createdAt": "2026-09-09T10:00:00Z",
+              "updatedAt": "2026-09-09T10:00:00Z"
+            }
+          ],
+          "pageNumber": 0,
+          "pageSize": 5,
+          "totalElements": 25,
+          "totalPages": 5,
+          "isFirst": true,
+          "isLast": false,
+          "hasNext": true
+        },
+        "timestamp": "1991-08-25T04:30:20.693Z"
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "content": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "example": "43e3966c-69c7-422d-9d86-2623e1476221",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string",
+                      "example": "Pritam Maity"
+                    },
+                    "email": {
+                      "type": "string",
+                      "example": "pritam@example.com"
+                    },
+                    "responsibility": {
+                      "type": "string",
+                      "enum": [
+                        "STUDENT",
+                        "CLASS_REPRESENTATIVE"
+                      ],
+                      "example": "STUDENT"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "example": "2026-09-09T10:00:00Z",
+                      "format": "date-time"
+                    },
+                    "updatedAt": {
+                      "type": "string",
+                      "example": "2026-09-09T10:00:00Z",
+                      "format": "date-time"
+                    }
+                  }
+                }
+              },
+              "pageNumber": {
+                "type": "integer",
+                "example": 0,
+                "format": "int32"
+              },
+              "pageSize": {
+                "type": "integer",
+                "example": 5,
+                "format": "int32"
+              },
+              "totalElements": {
+                "type": "integer",
+                "example": 25,
+                "format": "int64"
+              },
+              "totalPages": {
+                "type": "integer",
+                "example": 5,
+                "format": "int32"
+              },
+              "isFirst": {
+                "type": "boolean",
+                "example": true
+              },
+              "isLast": {
+                "type": "boolean",
+                "example": false
+              },
+              "hasNext": {
+                "type": "boolean",
+                "example": true
+              }
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+order: 1000

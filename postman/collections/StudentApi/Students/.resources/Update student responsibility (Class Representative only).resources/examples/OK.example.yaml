@@ -1,0 +1,90 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/students/:id/responsibility"
+  method: PATCH
+  headers:
+    - key: Content-Type
+      value: application/json
+    - key: Accept
+      value: "*/*"
+    - key: Authorization
+      value: Bearer <token>
+      description: "Added as a part of security scheme: bearer"
+  pathVariables:
+    id: b164d39b-1a6b-1139-1e95-babad077b5a7
+  body:
+    type: json
+    content: |-
+      {
+        "responsibility": "CLASS_REPRESENTATIVE"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    Content-Type: "*/*"
+  body:
+    type: text
+    content: |-
+      {
+        "message": "string",
+        "data": {
+          "id": "43e3966c-69c7-422d-9d86-2623e1476221",
+          "name": "Pritam Maity",
+          "email": "pritam@example.com",
+          "responsibility": "STUDENT",
+          "createdAt": "2026-09-09T10:00:00Z",
+          "updatedAt": "2026-09-09T10:00:00Z"
+        },
+        "timestamp": "1985-08-09T13:37:26.228Z"
+      }
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "example": "43e3966c-69c7-422d-9d86-2623e1476221",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string",
+                "example": "Pritam Maity"
+              },
+              "email": {
+                "type": "string",
+                "example": "pritam@example.com"
+              },
+              "responsibility": {
+                "type": "string",
+                "enum": [
+                  "STUDENT",
+                  "CLASS_REPRESENTATIVE"
+                ],
+                "example": "STUDENT"
+              },
+              "createdAt": {
+                "type": "string",
+                "example": "2026-09-09T10:00:00Z",
+                "format": "date-time"
+              },
+              "updatedAt": {
+                "type": "string",
+                "example": "2026-09-09T10:00:00Z",
+                "format": "date-time"
+              }
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+order: 1000

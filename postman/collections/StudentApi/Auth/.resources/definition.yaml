@@ -1,0 +1,3 @@
+$kind: collection
+description: Authentication and session endpoints
+order: 2000
