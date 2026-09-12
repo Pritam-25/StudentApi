@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -109,6 +110,7 @@ public class AuthServiceImpl implements AuthService {
 
   /** {@inheritDoc} */
   @Override
+  @Cacheable(cacheNames = "student-profile", key = "#studentId")
   public StudentResponse getCurrentUser(UUID studentId) {
     Student student =
         studentRepository

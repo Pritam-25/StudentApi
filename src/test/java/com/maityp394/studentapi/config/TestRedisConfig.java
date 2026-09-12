@@ -33,10 +33,30 @@ public class TestRedisConfig {
 
   private final Map<String, String> stringStore = new ConcurrentHashMap<>();
   private final Map<String, Set<String>> setStore = new ConcurrentHashMap<>();
+  private org.springframework.cache.concurrent.ConcurrentMapCacheManager cacheManager;
 
   public void clear() {
     stringStore.clear();
     setStore.clear();
+    if (cacheManager != null) {
+      cacheManager
+          .getCacheNames()
+          .forEach(
+              name -> {
+                var c = cacheManager.getCache(name);
+                if (c != null) {
+                  c.clear();
+                }
+              });
+    }
+  }
+
+  @Bean
+  @Primary
+  public org.springframework.cache.CacheManager testCacheManager() {
+    this.cacheManager =
+        new org.springframework.cache.concurrent.ConcurrentMapCacheManager("student-profile");
+    return this.cacheManager;
   }
 
   @Bean

@@ -15,6 +15,7 @@ import com.maityp394.studentapi.service.StudentService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -64,6 +65,7 @@ public class StudentServiceImpl implements StudentService {
   /** {@inheritDoc} */
   @Override
   @Transactional
+  @CacheEvict(cacheNames = "student-profile", key = "#id")
   public StudentResponse updateStudent(UUID id, UpdateStudentRequest request) {
     Student student = findStudentByIdOrThrow(id);
     String email = request.email();
@@ -83,6 +85,7 @@ public class StudentServiceImpl implements StudentService {
   /** {@inheritDoc} */
   @Override
   @Transactional
+  @CacheEvict(cacheNames = "student-profile", key = "#id")
   public StudentResponse patchStudent(UUID id, PatchStudentRequest request) {
     Student student = findStudentByIdOrThrow(id);
 
@@ -107,6 +110,7 @@ public class StudentServiceImpl implements StudentService {
   /** {@inheritDoc} */
   @Override
   @Transactional
+  @CacheEvict(cacheNames = "student-profile", key = "#id")
   public void deleteStudent(UUID id) {
     Student student = findStudentByIdOrThrow(id);
     studentRepository.delete(student);
@@ -116,6 +120,7 @@ public class StudentServiceImpl implements StudentService {
   /** {@inheritDoc} */
   @Override
   @Transactional
+  @CacheEvict(cacheNames = "student-profile", key = "#id")
   public StudentResponse updateResponsibility(UUID id, Responsibility responsibility) {
     Student student = findStudentByIdOrThrow(id);
     student.assignResponsibility(responsibility);
