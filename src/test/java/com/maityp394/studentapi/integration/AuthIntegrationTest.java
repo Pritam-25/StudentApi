@@ -335,4 +335,176 @@ class AuthIntegrationTest extends BaseIntegrationTest {
     assertThat((String) documentContext.read("$.code")).isEqualTo("VALIDATION_FAILED");
     assertThat((Object) documentContext.read("$.errors.name")).isNotNull();
   }
+
+  @Test
+  @DisplayName("POST /refresh - Should rotate refresh token and issue new access token")
+  void shouldRefreshTokenSuccessfullyAndRotateTokens() {
+    RegisterRequest registerRequest =
+        new RegisterRequest("Refresh User", "refresh.user@example.com", "Secret123!");
+    ResponseEntity<String> regResponse =
+        testRestTemplate.postForEntity("/api/v1/auth/register", registerRequest, String.class);
+
+    assertThat(regResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    List<String> cookies = regResponse.getHeaders().get(HttpHeaders.SET_COOKIE);
+    assertThat(cookies).isNotNull();
+
+    String refreshTokenCookie =
+        cookies.stream().filter(c -> c.startsWith("refresh_token=")).findFirst().orElseThrow();
+    String refreshCookieValue = refreshTokenCookie.split(";")[0];
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.COOKIE, refreshCookieValue);
+    HttpEntity<Void> refreshEntity = new HttpEntity<>(headers);
+
+    ResponseEntity<String> refreshResponse =
+        testRestTemplate.exchange(
+            "/api/v1/auth/refresh", HttpMethod.POST, refreshEntity, String.class);
+
+    assertThat(refreshResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+    List<String> newCookies = refreshResponse.getHeaders().get(HttpHeaders.SET_COOKIE);
+    assertThat(newCookies).isNotNull();
+
+    String newAccessCookie =
+        newCookies.stream().filter(c -> c.startsWith("access_token=")).findFirst().orElseThrow();
+    String newRefreshCookie =
+        newCookies.stream().filter(c -> c.startsWith("refresh_token=")).findFirst().orElseThrow();
+
+    assertThat(newRefreshCookie).isNotEqualTo(refreshTokenCookie);
+
+    // Validate new access token works against /me
+    HttpHeaders meHeaders = new HttpHeaders();
+    meHeaders.add(HttpHeaders.COOKIE, newAccessCookie.split(";")[0]);
+    ResponseEntity<String> meResponse =
+        testRestTemplate.exchange(
+            "/api/v1/auth/me", HttpMethod.GET, new HttpEntity<>(meHeaders), String.class);
+
+    assertThat(meResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+    DocumentContext doc = JsonPath.parse(meResponse.getBody());
+    assertThat((String) doc.read("$.data.email")).isEqualTo("refresh.user@example.com");
+  }
+
+  @Test
+  @DisplayName(
+      "POST /refresh - Replaying an old refresh token should revoke session and return 401")
+  void shouldDetectRefreshTokenReplayAndRevokeSession() {
+    RegisterRequest registerRequest =
+        new RegisterRequest("Replay User", "replay.user@example.com", "Secret123!");
+    ResponseEntity<String> regResponse =
+        testRestTemplate.postForEntity("/api/v1/auth/register", registerRequest, String.class);
+
+    assertThat(regResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+    List<String> cookies = regResponse.getHeaders().get(HttpHeaders.SET_COOKIE);
+    String initialRefreshToken =
+        cookies.stream()
+            .filter(c -> c.startsWith("refresh_token="))
+            .findFirst()
+            .orElseThrow()
+            .split(";")[0];
+
+    // First rotation (valid)
+    HttpHeaders headers1 = new HttpHeaders();
+    headers1.add(HttpHeaders.COOKIE, initialRefreshToken);
+    ResponseEntity<String> rotate1 =
+        testRestTemplate.exchange(
+            "/api/v1/auth/refresh", HttpMethod.POST, new HttpEntity<>(headers1), String.class);
+    assertThat(rotate1.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    List<String> rotatedCookies = rotate1.getHeaders().get(HttpHeaders.SET_COOKIE);
+    String secondRefreshToken =
+        rotatedCookies.stream()
+            .filter(c -> c.startsWith("refresh_token="))
+            .findFirst()
+            .orElseThrow()
+            .split(";")[0];
+
+    // Attempt replay with initialRefreshToken (already rotated)
+    HttpHeaders replayHeaders = new HttpHeaders();
+    replayHeaders.add(HttpHeaders.COOKIE, initialRefreshToken);
+    ResponseEntity<String> replayResponse =
+        testRestTemplate.exchange(
+            "/api/v1/auth/refresh", HttpMethod.POST, new HttpEntity<>(replayHeaders), String.class);
+
+    // Replay must be rejected with 401 Unauthorized
+    assertThat(replayResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+
+    // Session is now revoked, so secondRefreshToken should also fail
+    HttpHeaders headers2 = new HttpHeaders();
+    headers2.add(HttpHeaders.COOKIE, secondRefreshToken);
+    ResponseEntity<String> revokedResponse =
+        testRestTemplate.exchange(
+            "/api/v1/auth/refresh", HttpMethod.POST, new HttpEntity<>(headers2), String.class);
+    assertThat(revokedResponse.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+  }
+
+  @Test
+  @DisplayName("POST /logout-all - Should invalidate all active sessions for the student")
+  void shouldLogoutAllSessions() {
+    createTestStudent(
+        "Logout All User", "logoutall@example.com", "Secret123!", Responsibility.STUDENT);
+
+    // Session 1
+    LoginRequest loginRequest1 = new LoginRequest("logoutall@example.com", "Secret123!");
+    ResponseEntity<String> login1 =
+        testRestTemplate.postForEntity("/api/v1/auth/login", loginRequest1, String.class);
+    assertThat(login1.getStatusCode()).isEqualTo(HttpStatus.OK);
+    String refresh1 =
+        login1.getHeaders().get(HttpHeaders.SET_COOKIE).stream()
+            .filter(c -> c.startsWith("refresh_token="))
+            .findFirst()
+            .orElseThrow()
+            .split(";")[0];
+    String access1 =
+        login1.getHeaders().get(HttpHeaders.SET_COOKIE).stream()
+            .filter(c -> c.startsWith("access_token="))
+            .findFirst()
+            .orElseThrow()
+            .split(";")[0];
+
+    // Session 2
+    ResponseEntity<String> login2 =
+        testRestTemplate.postForEntity("/api/v1/auth/login", loginRequest1, String.class);
+    assertThat(login2.getStatusCode()).isEqualTo(HttpStatus.OK);
+    String refresh2 =
+        login2.getHeaders().get(HttpHeaders.SET_COOKIE).stream()
+            .filter(c -> c.startsWith("refresh_token="))
+            .findFirst()
+            .orElseThrow()
+            .split(";")[0];
+
+    // Call /logout-all with access1 as Bearer token
+    String rawAccessToken = access1.replace("access_token=", "");
+    HttpHeaders logoutHeaders = createBearerHeaders(rawAccessToken);
+    ResponseEntity<String> logoutResponse =
+        testRestTemplate.exchange(
+            "/api/v1/auth/logout-all",
+            HttpMethod.POST,
+            new HttpEntity<>(logoutHeaders),
+            String.class);
+    assertThat(logoutResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+    // Both refresh tokens should now fail
+    HttpHeaders refreshHeaders1 = new HttpHeaders();
+    refreshHeaders1.add(HttpHeaders.COOKIE, refresh1);
+    assertThat(
+            testRestTemplate
+                .exchange(
+                    "/api/v1/auth/refresh",
+                    HttpMethod.POST,
+                    new HttpEntity<>(refreshHeaders1),
+                    String.class)
+                .getStatusCode())
+        .isEqualTo(HttpStatus.UNAUTHORIZED);
+
+    HttpHeaders refreshHeaders2 = new HttpHeaders();
+    refreshHeaders2.add(HttpHeaders.COOKIE, refresh2);
+    assertThat(
+            testRestTemplate
+                .exchange(
+                    "/api/v1/auth/refresh",
+                    HttpMethod.POST,
+                    new HttpEntity<>(refreshHeaders2),
+                    String.class)
+                .getStatusCode())
+        .isEqualTo(HttpStatus.UNAUTHORIZED);
+  }
 }

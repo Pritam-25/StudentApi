@@ -1,4 +1,4 @@
-package com.maityp394.studentapi.security;
+package com.maityp394.studentapi.security.handler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
