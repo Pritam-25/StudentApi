@@ -8,7 +8,7 @@ public enum RotationResult {
 
   /**
    * Stored token hash did not match expected hash, indicating token reuse or theft. The session
-   * status has been transitioned to REVOKED.
+   * status has been transitioned to REVOKE.
    */
   REUSE_DETECTED,
 

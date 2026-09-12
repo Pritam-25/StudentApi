@@ -173,6 +173,23 @@ class AuthIntegrationTest extends BaseIntegrationTest {
   }
 
   @Test
+  @DisplayName(
+      "POST /register - Should return 400 Bad Request when password uses whitespace as special character")
+  void shouldRejectRegistrationWhenPasswordUsesWhitespaceAsSpecialCharacter() {
+    RegisterRequest request =
+        new RegisterRequest("Whitespace Special", "whitespace@example.com", "Abcdef1 ");
+
+    ResponseEntity<String> response =
+        testRestTemplate.postForEntity("/api/v1/auth/register", request, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    DocumentContext json = JsonPath.parse(response.getBody());
+    assertThat((String) json.read("$.code")).isEqualTo("VALIDATION_FAILED");
+    assertThat((String) json.read("$.errors.password"))
+        .contains("Password must contain at least one special character");
+  }
+
+  @Test
   @DisplayName("POST /register - Should return 400 Bad Request when password lacks number")
   void shouldRejectRegistrationWhenPasswordLacksNumber() {
     RegisterRequest request =

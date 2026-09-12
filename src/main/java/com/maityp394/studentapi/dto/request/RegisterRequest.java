@@ -43,7 +43,7 @@ public record RegisterRequest(
                 - At least **1 uppercase** letter
                 - At least **1 number**
                 - At least **1 special character**""",
-            pattern = "^(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{8,30}$",
+            pattern = "^(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9\\s]).{8,30}$",
             example = "Password@123",
             format = "password")
         String password) {
