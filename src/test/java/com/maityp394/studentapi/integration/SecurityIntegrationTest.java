@@ -231,6 +231,42 @@ class SecurityIntegrationTest extends BaseIntegrationTest {
 
   @Test
   @DisplayName(
+      "POST /auth/logout - Should require CSRF protection when Authorization header is whitespace Bearer and access_token cookie is present")
+  void shouldRejectCookieLogoutWhenAuthorizationHeaderIsWhitespaceBearerWithoutCsrfToken() {
+    Student student = createDefaultStudent();
+    String token = createAccessToken(student);
+
+    HttpHeaders headers = createCookieHeaders(token, null);
+    headers.set(HttpHeaders.AUTHORIZATION, "Bearer    ");
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange("/api/v1/auth/logout", HttpMethod.POST, entity, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    DocumentContext documentContext = JsonPath.parse(response.getBody());
+    assertThat((String) documentContext.read("$.code")).isEqualTo("CSRF_INVALID");
+  }
+
+  @Test
+  @DisplayName(
+      "POST /auth/logout - Should exempt valid Bearer token authorization from CSRF without cookie")
+  void shouldExemptValidBearerTokenFromCsrfProtection() {
+    Student student = createDefaultStudent();
+    String token = createAccessToken(student);
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    ResponseEntity<String> response =
+        testRestTemplate.exchange("/api/v1/auth/logout", HttpMethod.POST, entity, String.class);
+
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+  }
+
+  @Test
+  @DisplayName(
       "GET /auth/me - Should retain existing XSRF-TOKEN cookie without clearing it (Max-Age=0 / Expires=1970)")
   void shouldNotClearCsrfTokenOnAuthenticatedRequestWithExistingCsrfCookie() {
     Student student = createDefaultStudent();

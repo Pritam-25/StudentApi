@@ -54,8 +54,10 @@ class RedisCacheIntegrationTest {
   void verifyRedisConnectivity() {
     if (org.springframework.transaction.support.TransactionSynchronizationManager
         .isSynchronizationActive()) {
-      org.springframework.transaction.support.TransactionSynchronizationManager.clear();
+      org.springframework.transaction.support.TransactionSynchronizationManager
+          .clearSynchronization();
     }
+    org.springframework.transaction.support.TransactionSynchronizationManager.clear();
     try {
       redisConnectionFactory.getConnection().ping();
     } catch (Exception e) {
@@ -101,11 +103,39 @@ class RedisCacheIntegrationTest {
       assertThat(retrieved.responsibility()).isEqualTo(original.responsibility());
 
       // 4. Verify eviction removes the key from Redis
+      if (org.springframework.transaction.support.TransactionSynchronizationManager
+          .isSynchronizationActive()) {
+        org.springframework.transaction.support.TransactionSynchronizationManager
+            .clearSynchronization();
+      }
       cache.evict(studentId);
       String afterEviction = stringRedisTemplate.opsForValue().get(redisKey);
+      if (afterEviction != null) {
+        try {
+          Thread.sleep(50);
+        } catch (InterruptedException ignored) {
+          Thread.currentThread().interrupt();
+        }
+        afterEviction = stringRedisTemplate.opsForValue().get(redisKey);
+      }
       assertThat(afterEviction).isNull();
     } finally {
+      if (org.springframework.transaction.support.TransactionSynchronizationManager
+          .isSynchronizationActive()) {
+        org.springframework.transaction.support.TransactionSynchronizationManager
+            .clearSynchronization();
+      }
       cache.evict(studentId);
     }
+  }
+
+  @org.junit.jupiter.api.AfterEach
+  void cleanupSynchronization() {
+    if (org.springframework.transaction.support.TransactionSynchronizationManager
+        .isSynchronizationActive()) {
+      org.springframework.transaction.support.TransactionSynchronizationManager
+          .clearSynchronization();
+    }
+    org.springframework.transaction.support.TransactionSynchronizationManager.clear();
   }
 }

@@ -156,6 +156,16 @@ public class TestRedisConfig {
               return 1L;
             });
 
+    // Key existence and expiration
+    when(template.hasKey(anyString()))
+        .thenAnswer(
+            inv -> {
+              String key = inv.getArgument(0);
+              return stringStore.containsKey(key) || setStore.containsKey(key);
+            });
+
+    when(template.expire(anyString(), any(java.time.Duration.class))).thenReturn(true);
+
     // Delete operations
     when(template.delete(anyString()))
         .thenAnswer(

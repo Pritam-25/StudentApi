@@ -108,8 +108,10 @@ class StudentProfileCacheTest {
   void tearDown() {
     if (org.springframework.transaction.support.TransactionSynchronizationManager
         .isSynchronizationActive()) {
-      org.springframework.transaction.support.TransactionSynchronizationManager.clear();
+      org.springframework.transaction.support.TransactionSynchronizationManager
+          .clearSynchronization();
     }
+    org.springframework.transaction.support.TransactionSynchronizationManager.clear();
   }
 
   @Test

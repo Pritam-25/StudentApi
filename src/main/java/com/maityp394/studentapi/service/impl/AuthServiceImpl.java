@@ -96,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
       RefreshToken token = RefreshToken.parse(rawRefreshToken);
       redisSessionService.revokeSession(token.sessionId());
       log.info("Logged out session {}", token.sessionId());
-    } catch (Exception e) {
+    } catch (IllegalArgumentException e) {
       log.warn("Failed to parse refresh token during logout: {}", e.getMessage());
     }
   }

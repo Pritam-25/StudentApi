@@ -167,7 +167,9 @@ public class SecurityConfig {
 
   private boolean hasBearerToken(HttpServletRequest request) {
     String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
-    return authorization != null && authorization.startsWith(SecurityConstants.BEARER_PREFIX);
+    return authorization != null
+        && authorization.startsWith(SecurityConstants.BEARER_PREFIX)
+        && !authorization.substring(SecurityConstants.BEARER_PREFIX.length()).isBlank();
   }
 
   /**

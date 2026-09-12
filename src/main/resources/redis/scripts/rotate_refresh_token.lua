@@ -20,7 +20,7 @@ end
 -- If presented hash does not match current active hash, replay/theft is detected!
 if session['refreshTokenHash'] ~= ARGV[1] then
     session['status'] = 'REVOKED'
-    redis.call('SET', KEYS[1], cjson.encode(session))
+    redis.call('SET', KEYS[1], cjson.encode(session), 'KEEPTTL')
     return 0
 end
 

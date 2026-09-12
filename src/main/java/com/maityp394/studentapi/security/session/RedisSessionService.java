@@ -76,7 +76,11 @@ public class RedisSessionService {
     long ttlSeconds = calculateTtlSeconds(now, absoluteExpiresAt);
     saveSession(session, Duration.ofSeconds(ttlSeconds));
 
-    redisTemplate.opsForSet().add(USER_SESSIONS_PREFIX + userId, sessionId.toString());
+    String userSessionsKey = USER_SESSIONS_PREFIX + userId;
+    pruneExpiredSessions(userSessionsKey);
+    redisTemplate.opsForSet().add(userSessionsKey, sessionId.toString());
+    redisTemplate.expire(
+        userSessionsKey, Duration.ofSeconds(sessionProperties.absoluteLifetimeSeconds()));
     log.debug("Created session {} for user {}", sessionId, userId);
     return session;
   }
@@ -181,6 +185,26 @@ public class RedisSessionService {
     }
     redisTemplate.delete(userKey);
     log.info("Revoked all sessions for user {}", userId);
+  }
+
+  private void pruneExpiredSessions(String userSessionsKey) {
+    Set<String> memberSessionIds = redisTemplate.opsForSet().members(userSessionsKey);
+    if (memberSessionIds == null || memberSessionIds.isEmpty()) {
+      return;
+    }
+
+    List<String> expiredSessionIds =
+        memberSessionIds.stream()
+            .filter(id -> !Boolean.TRUE.equals(redisTemplate.hasKey(SESSION_KEY_PREFIX + id)))
+            .toList();
+
+    if (!expiredSessionIds.isEmpty()) {
+      redisTemplate
+          .opsForSet()
+          .remove(userSessionsKey, (Object[]) expiredSessionIds.toArray(new String[0]));
+      log.debug(
+          "Pruned {} expired sessions for user set {}", expiredSessionIds.size(), userSessionsKey);
+    }
   }
 
   private void saveSession(UserSession session, Duration ttl) {
