@@ -7,7 +7,11 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.*;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -28,7 +32,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  * exception handling mechanisms while overriding key methods to conform to the RFC 9457
  * specification.
  *
- * <h3>RFC 9457 Response Structure</h3>
+ * <h2>RFC 9457 Response Structure</h2>
  *
  * <p>Standard fields include:
  *
@@ -41,7 +45,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  *   <li>{@code instance} - A URI reference identifying the specific occurrence of the problem
  * </ul>
  *
- * <h3>Custom Extension Properties</h3>
+ * <h2>Custom Extension Properties</h2>
  *
  * <ul>
  *   <li>{@code code} - Machine-readable {@link ErrorCode} identifier (e.g., {@code

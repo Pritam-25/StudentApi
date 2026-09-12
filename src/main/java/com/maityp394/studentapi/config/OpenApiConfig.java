@@ -21,6 +21,7 @@ public class OpenApiConfig {
 
   public static final String BEARER_AUTH = "bearerAuth";
   public static final String COOKIE_AUTH = "cookieAuth";
+  public static final String REFRESH_COOKIE_AUTH = "refreshCookieAuth";
 
   @Bean
   OpenAPI studentOpenAPI() {
@@ -51,7 +52,14 @@ public class OpenApiConfig {
                         .type(SecurityScheme.Type.APIKEY)
                         .in(SecurityScheme.In.COOKIE)
                         .name("access_token")
-                        .description("HttpOnly access_token cookie set upon login.")))
+                        .description("HttpOnly access_token cookie set upon login."))
+                .addSecuritySchemes(
+                    REFRESH_COOKIE_AUTH,
+                    new SecurityScheme()
+                        .type(SecurityScheme.Type.APIKEY)
+                        .in(SecurityScheme.In.COOKIE)
+                        .name("refresh_token")
+                        .description("HttpOnly refresh_token cookie used to renew sessions.")))
         .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
         .addSecurityItem(new SecurityRequirement().addList(COOKIE_AUTH));
   }
