@@ -1,0 +1,57 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: "*/*"
+body:
+  type: json
+  content: |-
+    {
+      "email": "pritam@example.com",
+      "name": "Pritam Maity",
+      "password": "Password@123"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30,
+          "example": "Pritam Maity"
+        },
+        "email": {
+          "type": "string",
+          "minLength": 1,
+          "example": "pritam@example.com",
+          "format": "email"
+        },
+        "password": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 30,
+          "pattern": "^(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9\\s]).{8,30}$",
+          "example": "Password@123",
+          "description": "### Password Requirements\n\n- Minimum **8** characters\n- At least **1 uppercase** letter\n- At least **1 number**\n- At least **1 special character**"
+        }
+      },
+      "required": [
+        "email",
+        "name",
+        "password"
+      ]
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: "var token = pm.cookies.get(\"access_token\");\r
+
+      pm.environment.set(\"bearerToken\", token);"
+    language: text/javascript
+settings: {}
+examples: ./.resources/Register a new student account.resources/examples
+order: 1000

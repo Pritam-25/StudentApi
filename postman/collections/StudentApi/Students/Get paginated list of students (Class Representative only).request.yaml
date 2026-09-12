@@ -1,0 +1,42 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/students?responsibility=CLASS_REPRESENTATIVE&page=4863&size=9717&sort=string,string"
+method: GET
+headers:
+  Accept: "*/*"
+queryParams:
+  - key: responsibility
+    value: CLASS_REPRESENTATIVE
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "enum": [
+              "STUDENT",
+              "CLASS_REPRESENTATIVE"
+            ]
+          }
+        }
+      }
+  - key: page
+    value: "4863"
+    disabled: false
+    description: ""
+  - key: size
+    value: "9717"
+    disabled: false
+    description: ""
+  - key: sort
+    value: string,string
+    disabled: false
+    description: ""
+body:
+  type: text
+  content: ""
+settings: {}
+examples: ./.resources/Get paginated list of students (Class Representative only).resources/examples
+order: 6000

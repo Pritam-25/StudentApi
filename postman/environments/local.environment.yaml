@@ -1,0 +1,22 @@
+name: Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:8000'
+    enabled: true
+    type: default
+    description: Local development server
+  - key: accessToken
+    value: ''
+    enabled: true
+    type: secret
+    description: JWT access token (set after login)
+  - key: refreshToken
+    value: ''
+    enabled: true
+    type: secret
+    description: JWT refresh token (set after login)
+  - key: studentId
+    value: ''
+    enabled: true
+    type: default
+    description: Student UUID for path variable requests

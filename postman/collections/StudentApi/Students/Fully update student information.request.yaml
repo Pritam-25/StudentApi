@@ -1,0 +1,57 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/students/:id"
+method: PUT
+headers:
+  Content-Type: application/json
+  Accept: "*/*"
+pathVariables:
+  - key: id
+    value: b164d39b-1a6b-1139-1e95-babad077b5a7
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+body:
+  type: json
+  content: |-
+    {
+      "email": "pritam.new@example.com",
+      "name": "Pritam Maity"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30,
+          "example": "Pritam Maity"
+        },
+        "email": {
+          "type": "string",
+          "minLength": 1,
+          "example": "pritam.new@example.com",
+          "format": "email"
+        }
+      },
+      "required": [
+        "email",
+        "name"
+      ]
+    }
+settings: {}
+examples: ./.resources/Fully update student information.resources/examples
+order: 2000

@@ -3,6 +3,8 @@ package com.maityp394.studentapi.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.time.Instant;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import org.springframework.http.ProblemDetail;
 
 /**
@@ -12,11 +14,8 @@ import org.springframework.http.ProblemDetail;
  * <p>Used across both Spring MVC controller exception handling and Spring Security filter error
  * handlers to ensure complete JSON contract consistency.
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ProblemDetailFactory {
-
-  private ProblemDetailFactory() {
-    // Utility class
-  }
 
   /**
    * Constructs a standardized {@link ProblemDetail} payload.

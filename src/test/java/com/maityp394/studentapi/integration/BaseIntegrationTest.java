@@ -1,14 +1,16 @@
 package com.maityp394.studentapi.integration;
 
+import com.maityp394.studentapi.config.TestRedisConfig;
 import com.maityp394.studentapi.entity.Responsibility;
 import com.maityp394.studentapi.entity.Student;
 import com.maityp394.studentapi.repository.StudentRepository;
-import com.maityp394.studentapi.security.JwtService;
+import com.maityp394.studentapi.security.token.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.resttestclient.TestRestTemplate;
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -21,16 +23,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureTestRestTemplate
+@Import(TestRedisConfig.class)
 public abstract class BaseIntegrationTest {
 
   @Autowired protected TestRestTemplate testRestTemplate;
   @Autowired protected StudentRepository studentRepository;
   @Autowired protected PasswordEncoder passwordEncoder;
   @Autowired protected JwtService jwtService;
+  @Autowired protected TestRedisConfig testRedisConfig;
 
   @BeforeEach
   void cleanDatabase() {
     studentRepository.deleteAll();
+    testRedisConfig.clear();
   }
 
   /**
@@ -44,11 +49,7 @@ public abstract class BaseIntegrationTest {
    */
   protected Student createTestStudent(
       String name, String email, String rawPassword, Responsibility responsibility) {
-    Student student = new Student();
-    student.setName(name);
-    student.setEmail(email);
-    student.setPasswordHash(passwordEncoder.encode(rawPassword));
-    student.setResponsibility(responsibility);
+    Student student = new Student(name, email, passwordEncoder.encode(rawPassword), responsibility);
     return studentRepository.save(student);
   }
 

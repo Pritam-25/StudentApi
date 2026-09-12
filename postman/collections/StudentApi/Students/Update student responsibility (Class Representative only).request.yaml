@@ -1,0 +1,51 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/students/:id/responsibility"
+method: PATCH
+headers:
+  Content-Type: application/json
+  Accept: "*/*"
+pathVariables:
+  - key: id
+    value: b164d39b-1a6b-1139-1e95-babad077b5a7
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "value"
+        ]
+      }
+body:
+  type: json
+  content: |-
+    {
+      "responsibility": "CLASS_REPRESENTATIVE"
+    }
+  $type: |-
+    {
+      "type": "object",
+      "properties": {
+        "responsibility": {
+          "type": "string",
+          "enum": [
+            "STUDENT",
+            "CLASS_REPRESENTATIVE"
+          ],
+          "example": "CLASS_REPRESENTATIVE"
+        }
+      },
+      "required": [
+        "responsibility"
+      ]
+    }
+settings: {}
+examples: ./.resources/Update student responsibility (Class Representative only).resources/examples
+order: 5000

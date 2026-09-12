@@ -12,13 +12,6 @@ import java.time.Instant;
  */
 public record ApiResponse<T>(String message, T data, Instant timestamp) {
 
-  /**
-   * Constructs a new {@code ApiResponse} instance, automatically setting the timestamp to the
-   * current UTC instant.
-   *
-   * @param message human-readable status or descriptive message
-   * @param data payload data returned by the operation
-   */
   public ApiResponse(String message, T data) {
     this(message, data, Instant.now());
   }

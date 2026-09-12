@@ -1,11 +1,11 @@
 package com.maityp394.studentapi.dto.response;
 
+import com.maityp394.studentapi.security.token.AuthTokens;
+
 /**
- * Internal authentication result containing student information and token metadata for cookie
- * generation.
+ * Internal authentication result containing student profile information and token metadata.
  *
  * @param student the authenticated student profile details
- * @param accessToken the minted JWT access token string
- * @param expiresIn the token lifespan in seconds
+ * @param tokens the issued authentication tokens and session metadata
  */
-public record AuthResult(StudentResponse student, String accessToken, long expiresIn) {}
+public record AuthResult(StudentResponse student, AuthTokens tokens) {}

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<!-- ================================================================= -->
@@ -11,7 +10,8 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>4.1.1</version>
-		<relativePath /> <!-- lookup parent from repository -->
+		<relativePath />
+		<!-- lookup parent from repository -->
 	</parent>
 
 	<groupId>com.maityp394</groupId>
@@ -46,6 +46,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<jacoco.version>0.8.14</jacoco.version>
+		<springdoc.version>3.1.1</springdoc.version>
 		<argLine/>
 	</properties>
 
@@ -72,6 +73,13 @@
 			<artifactId>spring-boot-starter-restclient</artifactId>
 		</dependency>
 
+		<!-- OpenAPI 3 Specification & Scalar Documentation -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-scalar</artifactId>
+			<version>${springdoc.version}</version>
+		</dependency>
+
 		<!-- ============================================================= -->
 		<!-- 2. Security & OAuth2                                          -->
 		<!-- ============================================================= -->
@@ -83,6 +91,17 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+		</dependency>
+
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
 		</dependency>
 
 		<!-- ============================================================= -->
@@ -187,6 +206,19 @@
 			<scope>test</scope>
 		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-flyway-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+
 		<!-- In-Memory Database for Unit/Integration Tests -->
 		<dependency>
 			<groupId>com.h2database</groupId>
@@ -206,8 +238,6 @@
 	<!--   Check Code Format:    mvn spotless:check                        -->
 	<!--   Apply Code Format:    mvn spotless:apply                        -->
 	<!--   Generate Coverage:    mvn clean verify                          -->
-	<!--   Sonar Analysis:       mvn sonar:sonar                           -->
-	<!--   Generate Javadoc:     mvn javadoc:javadoc                       -->
 	<!-- ================================================================= -->
 	<build>
 		<plugins>
@@ -342,6 +372,8 @@
 				<version>3.10.1</version>
 				<executions>
 					<execution>
+						<id>spotless-check</id>
+						<phase>verify</phase>
 						<goals>
 							<goal>check</goal>
 						</goals>
@@ -349,21 +381,27 @@
 				</executions>
 				<configuration>
 					<java>
-						<cleanthat/>
 						<googleJavaFormat>
 							<version>1.36.1</version>
 							<style>GOOGLE</style>
 						</googleJavaFormat>
-						<formatAnnotations/>
+						<toggleOffOn/>
 					</java>
 				</configuration>
 			</plugin>
 
-			<!-- SonarQube / SonarCloud Scanner: mvn sonar:sonar -->
+			<!-- Javadoc Linting & Validation: mvn checkstyle:check -->
 			<plugin>
-				<groupId>org.sonarsource.scanner.maven</groupId>
-				<artifactId>sonar-maven-plugin</artifactId>
-				<version>5.6.0.6792</version>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>3.6.0</version>
+				<configuration>
+					<configLocation>checkstyle.xml</configLocation>
+					<consoleOutput>true</consoleOutput>
+					<failsOnError>true</failsOnError>
+					<includeTestSourceDirectory>false</includeTestSourceDirectory>
+					<linkXRef>false</linkXRef>
+				</configuration>
 			</plugin>
 
 			<!-- ========================================================= -->
@@ -388,18 +426,6 @@
 					</gitConfig>
 				</configuration>
 			</plugin>
-
-			<!-- Javadoc Generation: mvn javadoc:javadoc -->
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.11.2</version>
-				<configuration>
-					<release>${java.version}</release>
-					<doclint>none</doclint>
-				</configuration>
-			</plugin>
-
 		</plugins>
 	</build>
 
