@@ -17,23 +17,23 @@ import java.util.Locale;
  *     character)
  */
 public record RegisterRequest(
-    @NotBlank(message = "Name is required") //
-        @Size(min = 2, max = 30, message = "Name must be between 2 and 30 characters") //
-        @Schema(example = "Pritam Maity") //
+    @NotBlank(message = "Name is required")
+        @Size(min = 2, max = 30, message = "Name must be between 2 and 30 characters")
+        @Schema(example = "Pritam Maity")
         String name,
-    @NotBlank(message = "Email is required") //
-        @Email(message = "Invalid email format") //
-        @Schema(example = "pritam@example.com") //
+    @NotBlank(message = "Email is required")
+        @Email(message = "Invalid email format")
+        @Schema(example = "pritam@example.com")
         String email,
-    @NotBlank(message = "Password is required") //
-        @Size(min = 8, max = 30, message = "Password must be between 8 and 30 characters") //
+    @NotBlank(message = "Password is required")
+        @Size(min = 8, max = 30, message = "Password must be between 8 and 30 characters")
         @Pattern(
             regexp = "^[^A-Z]*+[A-Z].*+",
-            message = "Password must contain at least one uppercase letter") //
-        @Pattern(regexp = "^\\D*+\\d.*+", message = "Password must contain at least one number") //
+            message = "Password must contain at least one uppercase letter")
+        @Pattern(regexp = "^\\D*+\\d.*+", message = "Password must contain at least one number")
         @Pattern(
             regexp = "^[a-zA-Z0-9\\s]*+[^a-zA-Z0-9\\s].*+",
-            message = "Password must contain at least one special character") //
+            message = "Password must contain at least one special character")
         @Schema(
             description =
                 """
@@ -45,7 +45,7 @@ public record RegisterRequest(
                 - At least **1 special character**""",
             pattern = "^(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{8,30}$",
             example = "Password@123",
-            format = "password") //
+            format = "password")
         String password) {
 
   public RegisterRequest {

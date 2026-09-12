@@ -13,12 +13,8 @@ import java.util.Locale;
  * @param email the optional updated email address (must be a valid email format if provided)
  */
 public record PatchStudentRequest(
-    @Size(min = 2, max = 30) //
-        @Schema(example = "Pritam Maity") //
-        String name,
-    @Email //
-        @Schema(example = "pritam.patch@example.com") //
-        String email) {
+    @Size(min = 2, max = 30) @Schema(example = "Pritam Maity") String name,
+    @Email @Schema(example = "pritam.patch@example.com") String email) {
 
   public PatchStudentRequest {
     name = name != null ? name.strip() : null;

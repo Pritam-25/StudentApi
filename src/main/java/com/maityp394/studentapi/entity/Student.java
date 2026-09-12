@@ -1,6 +1,15 @@
 package com.maityp394.studentapi.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -40,7 +49,7 @@ public class Student {
   private String email;
 
   /** BCrypt hash of the student's password. Never stores plaintext. */
-  @Column(nullable = false)
+  @Column(name = "password_hash", nullable = false)
   private String passwordHash;
 
   /** The role or responsibility of the student. */
@@ -61,7 +70,7 @@ public class Student {
   private Instant updatedAt;
 
   /**
-   * Constructs a new {@link Student} entity with the specified properties.
+   * Constructs a new {@link Student} entity with local password credentials.
    *
    * @param name Name of the student.
    * @param email Email of the student.

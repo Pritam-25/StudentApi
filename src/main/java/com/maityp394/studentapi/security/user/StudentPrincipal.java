@@ -1,4 +1,4 @@
-package com.maityp394.studentapi.security;
+package com.maityp394.studentapi.security.user;
 
 import com.maityp394.studentapi.entity.Student;
 import java.util.Collection;

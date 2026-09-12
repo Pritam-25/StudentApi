@@ -1,4 +1,4 @@
-package com.maityp394.studentapi.security;
+package com.maityp394.studentapi.security.token;
 
 import com.maityp394.studentapi.config.properties.JwtProperties;
 import com.maityp394.studentapi.entity.Student;
@@ -24,14 +24,26 @@ public class JwtService {
   private final JwtProperties jwtProperties;
 
   /**
-   * Generates a signed JWT access token for the given authenticated student.
+   * Generates a signed JWT access token for the given authenticated student without a session
+   * binding.
    *
    * @param student the student entity for whom the token is generated
    * @return the serialized JWT string
    */
   public String generateAccessToken(Student student) {
+    return generateAccessToken(student, null);
+  }
+
+  /**
+   * Generates a signed JWT access token bound to a specific server-side session.
+   *
+   * @param student the student entity for whom the token is generated
+   * @param sessionId the server-side session UUID, or null
+   * @return the serialized JWT string
+   */
+  public String generateAccessToken(Student student, UUID sessionId) {
     Instant now = Instant.now();
-    JwtClaimsSet claims =
+    JwtClaimsSet.Builder claimsBuilder =
         JwtClaimsSet.builder()
             .issuer(jwtProperties.issuer())
             .id(UUID.randomUUID().toString())
@@ -39,11 +51,16 @@ public class JwtService {
             .claim("email", student.getEmail())
             .claim("authorities", List.of(student.getResponsibility().toAuthority()))
             .issuedAt(now)
-            .expiresAt(now.plusMillis(jwtProperties.expirationMs()))
-            .build();
+            .expiresAt(now.plusMillis(jwtProperties.expirationMs()));
+
+    if (sessionId != null) {
+      claimsBuilder.claim("sid", sessionId.toString());
+    }
 
     return jwtEncoder
-        .encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
+        .encode(
+            JwtEncoderParameters.from(
+                JwsHeader.with(MacAlgorithm.HS256).build(), claimsBuilder.build()))
         .getTokenValue();
   }
 

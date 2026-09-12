@@ -1,21 +1,21 @@
 package com.maityp394.studentapi.security;
 
+import com.maityp394.studentapi.security.csrf.CsrfCookieFilter;
+import com.maityp394.studentapi.security.csrf.SpaCsrfTokenRequestHandler;
+import com.maityp394.studentapi.security.handler.RestAccessDeniedHandler;
+import com.maityp394.studentapi.security.handler.RestAuthenticationEntryPoint;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
@@ -66,7 +66,8 @@ public class SecurityConfig {
           path("/actuator/health"),
           path("/actuator/info"),
           path("/api/v1/auth/login"),
-          path("/api/v1/auth/register"));
+          path("/api/v1/auth/register"),
+          path("/api/v1/auth/refresh"));
 
   private static final RequestMatcher OPENAPI_DOCS_PATHS =
       new OrRequestMatcher(path("/scalar/**"), path("/v3/api-docs/**"), path("/v3/api-docs.yaml"));
@@ -194,32 +195,6 @@ public class SecurityConfig {
       String token = delegate.resolve(request);
       return token != null ? token : SecurityConstants.getAccessTokenFromCookie(request);
     };
-  }
-
-  /**
-   * Configures the central authentication manager responsible for verifying user login credentials.
-   *
-   * <p>Authentication process:
-   *
-   * <ul>
-   *   <li><b>User Lookup:</b> Retrieves user account details and the stored password hash from the
-   *       database using the configured user details service.
-   *   <li><b>Password Verification:</b> Compares the raw password supplied during login against the
-   *       stored hash using the password encoder (e.g., BCrypt).
-   *   <li><b>Authentication Result:</b> Produces a fully authenticated token on success, or throws
-   *       an authentication exception if the username or password is invalid.
-   * </ul>
-   *
-   * @param userDetailsService service used to load user accounts from the database
-   * @param passwordEncoder the encoder used to verify password hashes
-   * @return the configured authentication manager
-   */
-  @Bean
-  AuthenticationManager authenticationManager(
-      UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-    DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
-    provider.setPasswordEncoder(passwordEncoder);
-    return new ProviderManager(provider);
   }
 
   /**

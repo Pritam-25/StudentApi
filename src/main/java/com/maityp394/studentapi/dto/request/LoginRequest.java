@@ -12,12 +12,12 @@ import java.util.Locale;
  * @param password the student's password
  */
 public record LoginRequest(
-    @NotBlank(message = "Email is required") //
-        @Email(message = "Invalid email format") //
-        @Schema(example = "pritam@example.com") //
+    @NotBlank(message = "Email is required")
+        @Email(message = "Invalid email format")
+        @Schema(example = "pritam@example.com")
         String email,
-    @NotBlank(message = "Password is required") //
-        @Schema(example = "Password@123", format = "password") //
+    @NotBlank(message = "Password is required")
+        @Schema(example = "Password@123", format = "password")
         String password) {
 
   public LoginRequest {

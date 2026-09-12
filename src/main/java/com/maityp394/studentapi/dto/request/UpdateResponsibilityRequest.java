@@ -11,6 +11,5 @@ import jakarta.validation.constraints.NotNull;
  * @param responsibility the new responsibility role to assign
  */
 public record UpdateResponsibilityRequest(
-    @NotNull(message = "Responsibility is required") //
-        @Schema(example = "CLASS_REPRESENTATIVE") //
+    @NotNull(message = "Responsibility is required") @Schema(example = "CLASS_REPRESENTATIVE")
         Responsibility responsibility) {}

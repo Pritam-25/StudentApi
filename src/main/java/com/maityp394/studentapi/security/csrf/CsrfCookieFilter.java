@@ -1,4 +1,4 @@
-package com.maityp394.studentapi.security;
+package com.maityp394.studentapi.security.csrf;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

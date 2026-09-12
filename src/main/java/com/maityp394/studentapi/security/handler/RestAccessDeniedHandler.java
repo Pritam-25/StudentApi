@@ -1,4 +1,4 @@
-package com.maityp394.studentapi.security;
+package com.maityp394.studentapi.security.handler;
 
 import com.maityp394.studentapi.exception.ErrorCode;
 import com.maityp394.studentapi.exception.ProblemDetailFactory;
