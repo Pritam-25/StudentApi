@@ -1,6 +1,6 @@
 $kind: http-request
 description: ""
-url: "{{baseUrl}}/api/v1/students?responsibility=CLASS_REPRESENTATIVE&page=4863&size=9717&sort=string,string"
+url: "{{baseUrl}}/api/v1/students?responsibility=CLASS_REPRESENTATIVE&page=0&size=5&sort=name,ASC"
 method: GET
 headers:
   Accept: "*/*"
@@ -23,17 +23,51 @@ queryParams:
         }
       }
   - key: page
-    value: "4863"
+    value: "0"
     disabled: false
-    description: ""
+    description: Zero-based page index (0..N)
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "default": 0,
+            "minimum": 0
+          }
+        }
+      }
   - key: size
-    value: "9717"
+    value: "5"
     disabled: false
-    description: ""
+    description: The size of the page to be returned
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "default": 5,
+            "minimum": 1
+          }
+        }
+      }
   - key: sort
-    value: string,string
+    value: name,ASC
     disabled: false
-    description: ""
+    description: "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported."
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "array",
+            "default": [
+              "name,ASC"
+            ]
+          }
+        }
+      }
 body:
   type: text
   content: ""

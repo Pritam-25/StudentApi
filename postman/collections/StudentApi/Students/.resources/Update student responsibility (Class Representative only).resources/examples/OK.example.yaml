@@ -11,7 +11,7 @@ request:
       value: Bearer <token>
       description: "Added as a part of security scheme: bearer"
   pathVariables:
-    id: b164d39b-1a6b-1139-1e95-babad077b5a7
+    id: 43e3966c-69c7-422d-9d86-2623e1476221
   body:
     type: json
     content: |-
@@ -24,7 +24,7 @@ response:
   headers:
     Content-Type: "*/*"
   body:
-    type: text
+    type: json
     content: |-
       {
         "message": "string",
@@ -32,7 +32,7 @@ response:
           "id": "43e3966c-69c7-422d-9d86-2623e1476221",
           "name": "Pritam Maity",
           "email": "pritam@example.com",
-          "responsibility": "STUDENT",
+          "responsibility": "CLASS_REPRESENTATIVE",
           "createdAt": "2026-09-09T10:00:00Z",
           "updatedAt": "2026-09-09T10:00:00Z"
         },

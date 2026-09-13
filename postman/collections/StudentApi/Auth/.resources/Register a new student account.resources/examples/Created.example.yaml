@@ -19,7 +19,7 @@ response:
   headers:
     Content-Type: "*/*"
   body:
-    type: text
+    type: json
     content: |-
       {
         "message": "string",

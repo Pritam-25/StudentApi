@@ -65,7 +65,11 @@ class OpenApiDocsTest extends BaseIntegrationTest {
 
     // 2. Anonymous endpoints must explicitly declare security: [{}]
     List<String> anonymousPaths =
-        List.of("/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/logout");
+        List.of(
+            "/api/v1/auth/login",
+            "/api/v1/auth/register",
+            "/api/v1/auth/logout",
+            "/api/v1/auth/refresh");
     for (String path : anonymousPaths) {
       JsonNode securityNode = openApiNode.path("paths").path(path).path("post").path("security");
       assertThat(securityNode.isArray())
@@ -82,14 +86,7 @@ class OpenApiDocsTest extends BaseIntegrationTest {
           .isTrue();
     }
 
-    // 3. /api/v1/auth/refresh must require refreshCookieAuth only
-    JsonNode refreshSecurity =
-        openApiNode.path("paths").path("/api/v1/auth/refresh").path("post").path("security");
-    assertThat(refreshSecurity.isArray()).isTrue();
-    assertThat(refreshSecurity).hasSize(1);
-    assertThat(refreshSecurity.get(0).has("refreshCookieAuth")).isTrue();
-
-    // 4. Authenticated endpoints must not override security, thereby inheriting global security
+    // 3. Authenticated endpoints must not override security, thereby inheriting global security
     JsonNode meSecurity =
         openApiNode.path("paths").path("/api/v1/auth/me").path("get").path("security");
     assertThat(meSecurity.isMissingNode())

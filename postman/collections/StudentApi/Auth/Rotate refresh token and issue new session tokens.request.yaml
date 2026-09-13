@@ -8,11 +8,7 @@ body:
   type: text
   content: ""
 auth:
-  type: apikey
-  credentials:
-    key: refresh_token
-    value: "{{apiKey}}"
-    in: header
+  type: noauth
 settings: {}
 examples: ./.resources/Rotate refresh token and issue new session tokens.resources/examples
 order: 2000

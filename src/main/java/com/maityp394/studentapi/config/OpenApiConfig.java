@@ -10,6 +10,7 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import java.util.List;
 import org.springdoc.core.customizers.OpenApiCustomizer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,11 +25,6 @@ public class OpenApiConfig {
 
   public static final String BEARER_AUTH = "bearerAuth";
   public static final String COOKIE_AUTH = "cookieAuth";
-  public static final String REFRESH_COOKIE_AUTH = "refreshCookieAuth";
-
-  private static final String LOGIN_PATH = "/api/v1/auth/login";
-  private static final String REGISTER_PATH = "/api/v1/auth/register";
-  private static final String LOGOUT_PATH = "/api/v1/auth/logout";
 
   @Bean
   OpenAPI studentOpenAPI() {
@@ -59,32 +55,25 @@ public class OpenApiConfig {
                         .type(SecurityScheme.Type.APIKEY)
                         .in(SecurityScheme.In.COOKIE)
                         .name("access_token")
-                        .description("HttpOnly access_token cookie set upon login."))
-                .addSecuritySchemes(
-                    REFRESH_COOKIE_AUTH,
-                    new SecurityScheme()
-                        .type(SecurityScheme.Type.APIKEY)
-                        .in(SecurityScheme.In.COOKIE)
-                        .name("refresh_token")
-                        .description("HttpOnly refresh_token cookie used to renew sessions.")))
+                        .description("HttpOnly access_token cookie set upon login.")))
         .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
         .addSecurityItem(new SecurityRequirement().addList(COOKIE_AUTH));
   }
 
   @Bean
-  OpenApiCustomizer anonymousAuthEndpointsCustomizer() {
+  OpenApiCustomizer anonymousAuthEndpointsCustomizer(
+      @Value("${app.openapi.anonymous-paths:}") List<String> anonymousPaths) {
     return openApi -> {
       if (openApi.getPaths() == null) {
         return;
       }
-      List.of(LOGIN_PATH, REGISTER_PATH, LOGOUT_PATH)
-          .forEach(
-              path -> {
-                PathItem pathItem = openApi.getPaths().get(path);
-                if (pathItem != null && pathItem.getPost() != null) {
-                  pathItem.getPost().setSecurity(List.of(new SecurityRequirement()));
-                }
-              });
+      anonymousPaths.forEach(
+          path -> {
+            PathItem pathItem = openApi.getPaths().get(path.trim());
+            if (pathItem != null && pathItem.getPost() != null) {
+              pathItem.getPost().setSecurity(List.of(new SecurityRequirement()));
+            }
+          });
     };
   }
 }

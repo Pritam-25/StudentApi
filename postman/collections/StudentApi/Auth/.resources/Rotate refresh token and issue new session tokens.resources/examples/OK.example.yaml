@@ -3,11 +3,7 @@ request:
   url: "{{baseUrl}}/api/v1/auth/refresh"
   method: POST
   headers:
-    - key: Accept
-      value: "*/*"
-    - key: refresh_token
-      value: <API Key>
-      description: "Added as a part of security scheme: apikey"
+    Accept: "*/*"
   body:
     type: text
     content: ""
@@ -17,7 +13,7 @@ response:
   headers:
     Content-Type: "*/*"
   body:
-    type: text
+    type: json
     content: |-
       {
         "message": "string",

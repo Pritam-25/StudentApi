@@ -1,6 +1,5 @@
 package com.maityp394.studentapi.controller;
 
-import com.maityp394.studentapi.config.OpenApiConfig;
 import com.maityp394.studentapi.config.properties.SecurityProperties;
 import com.maityp394.studentapi.dto.request.LoginRequest;
 import com.maityp394.studentapi.dto.request.RegisterRequest;
@@ -13,7 +12,6 @@ import com.maityp394.studentapi.security.SecurityConstants;
 import com.maityp394.studentapi.security.token.AuthTokens;
 import com.maityp394.studentapi.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -23,6 +21,7 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -37,7 +36,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 /** REST controller exposing authentication, registration, refresh, and session logout endpoints. */
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping(value = "/api/v1/auth", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Tag(name = "Auth", description = "Authentication and session endpoints")
 public class AuthController {
@@ -101,7 +100,6 @@ public class AuthController {
    */
   @PostMapping("/refresh")
   @Operation(summary = "Rotate refresh token and issue new session tokens")
-  @SecurityRequirement(name = OpenApiConfig.REFRESH_COOKIE_AUTH)
   public ResponseEntity<ApiResponse<Void>> refresh(HttpServletRequest request) {
     String rawRefreshToken = SecurityConstants.getRefreshTokenFromCookie(request);
     if (rawRefreshToken == null || rawRefreshToken.isBlank()) {

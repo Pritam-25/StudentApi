@@ -7,7 +7,7 @@ description: |-
 variables:
   baseUrl: http://localhost:8000
 auth:
-  - id: d1c8c747-0073-4b7a-87fb-6833b317735d
+  - id: d289e1c3-bd78-4262-9c1d-70f54e4cbf10
     type: bearer
     name: bearer auth
     credentials:

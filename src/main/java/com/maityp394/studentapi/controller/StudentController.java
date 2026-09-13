@@ -15,9 +15,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -38,7 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
  * <p>Exposes operations under the {@code /api/v1/students} base path.
  */
 @RestController
-@RequestMapping("/api/v1/students")
+@RequestMapping(value = "/api/v1/students", produces = MediaType.APPLICATION_JSON_VALUE)
 @RequiredArgsConstructor
 @Tag(
     name = "Students",
@@ -60,7 +62,7 @@ public class StudentController {
   @Operation(summary = "Get paginated list of students (Class Representative only)")
   public ResponseEntity<ApiResponse<PageResponse<StudentResponse>>> getStudents(
       @RequestParam(required = false) Responsibility responsibility,
-      @PageableDefault(size = 5, sort = "name") Pageable pageable) {
+      @ParameterObject @PageableDefault(size = 5, sort = "name") Pageable pageable) {
 
     PageResponse<StudentResponse> students =
         studentService.getAllStudents(responsibility, pageable);

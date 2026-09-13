@@ -7,7 +7,7 @@ headers:
   Accept: "*/*"
 pathVariables:
   - key: id
-    value: b164d39b-1a6b-1139-1e95-babad077b5a7
+    value: "{{id}}"
     disabled: false
     description: ""
     $type: |-

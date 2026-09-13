@@ -9,7 +9,7 @@ request:
       value: Bearer <token>
       description: "Added as a part of security scheme: bearer"
   pathVariables:
-    id: b164d39b-1a6b-1139-1e95-babad077b5a7
+    id: 43e3966c-69c7-422d-9d86-2623e1476221
   body:
     type: text
     content: ""
@@ -19,7 +19,7 @@ response:
   headers:
     Content-Type: "*/*"
   body:
-    type: text
+    type: json
     content: |-
       {
         "message": "string",

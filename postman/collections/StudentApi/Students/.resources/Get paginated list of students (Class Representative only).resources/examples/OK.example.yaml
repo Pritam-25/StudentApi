@@ -1,6 +1,6 @@
 $kind: http-example
 request:
-  url: "{{baseUrl}}/api/v1/students?responsibility=CLASS_REPRESENTATIVE&page=4863&size=9717&sort=string,string"
+  url: "{{baseUrl}}/api/v1/students?responsibility=CLASS_REPRESENTATIVE&page=0&size=5&sort=name,ASC"
   method: GET
   headers:
     - key: Accept
@@ -9,10 +9,22 @@ request:
       value: Bearer <token>
       description: "Added as a part of security scheme: bearer"
   queryParams:
-    responsibility: CLASS_REPRESENTATIVE
-    page: "4863"
-    size: "9717"
-    sort: string,string
+    - key: responsibility
+      value: CLASS_REPRESENTATIVE
+      disabled: false
+      description: ""
+    - key: page
+      value: "0"
+      disabled: false
+      description: Zero-based page index (0..N)
+    - key: size
+      value: "5"
+      disabled: false
+      description: The size of the page to be returned
+    - key: sort
+      value: name,ASC
+      disabled: false
+      description: "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported."
   body:
     type: text
     content: ""
@@ -22,7 +34,7 @@ response:
   headers:
     Content-Type: "*/*"
   body:
-    type: text
+    type: json
     content: |-
       {
         "message": "string",

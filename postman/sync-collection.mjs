@@ -7,13 +7,13 @@
  * and re-syncs the linked "Student Management API" collection.
  *
  * Usage:
- *   node postman/sync-collection.js          # watch mode (keeps running)
- *   node postman/sync-collection.js --once   # one-shot copy and exit
+ *   node postman/sync-collection.mjs          # watch mode (keeps running)
+ *   node postman/sync-collection.mjs --once   # one-shot copy and exit
  *
  * Hook into your workflow:
- *   - Git pre-commit:  add `node postman/sync-collection.js --once` to .git/hooks/pre-commit
+ *   - Git pre-commit:  add `node postman/sync-collection.mjs --once` to .git/hooks/pre-commit
  *   - Maven build:     add exec-maven-plugin to run this after compile phase
- *   - npm scripts:     "sync-spec": "node postman/sync-collection.js --once"
+ *   - npm scripts:     "sync-spec": "node postman/sync-collection.mjs --once"
  */
 
 import fs from 'node:fs';
