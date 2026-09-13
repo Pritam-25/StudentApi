@@ -7,6 +7,7 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NonNull;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -303,6 +304,35 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     log.debug("Method argument type mismatch on parameter '{}'", ex.getName());
 
     ProblemDetail problem = buildProblem(ErrorCode.INVALID_PARAMETER_TYPE, detail, request);
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
+  }
+
+  /**
+   * Intercepts invalid sort property references in pagination and sorting requests.
+   *
+   * <p>Typically triggered when a request provides an unknown sort property (for example, {@code
+   * ?sort=string,asc} on an entity that has no such field).
+   *
+   * @param ex the property reference exception containing the invalid property name
+   * @param request the current {@link HttpServletRequest}
+   * @return a {@link ResponseEntity} with HTTP 400 Bad Request enclosing an {@code INVALID_REQUEST}
+   *     {@link ProblemDetail}
+   * @see PropertyReferenceException
+   * @see ErrorCode#INVALID_REQUEST
+   */
+  @ExceptionHandler(PropertyReferenceException.class)
+  public ResponseEntity<ProblemDetail> handlePropertyReference(
+      PropertyReferenceException ex, HttpServletRequest request) {
+
+    log.debug("Invalid sort property: {}", ex.getMessage());
+
+    String detail =
+        String.format(
+            "Invalid sort property '%s' for resource '%s'",
+            ex.getPropertyName(), ex.getType().getType().getSimpleName());
+
+    ProblemDetail problem = buildProblem(ErrorCode.INVALID_REQUEST, detail, request);
 
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(problem);
   }

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 class StudentJpaTest extends BaseIntegrationTest {
 
   @Autowired private org.springframework.transaction.PlatformTransactionManager transactionManager;
+  @Autowired private jakarta.persistence.EntityManager entityManager;
 
   @Test
   @DisplayName("equals and hashCode should support proxy-to-entity and entity-to-proxy equality")
@@ -24,17 +25,26 @@ class StudentJpaTest extends BaseIntegrationTest {
                       "Pritam", "pritam.jpa@example.com", "Secret123!", Responsibility.STUDENT);
               UUID studentId = student.getId();
 
+              // Flush and clear persistence context so getReferenceById yields an uninitialized
+              // proxy
+              entityManager.flush();
+              entityManager.clear();
+
               // Obtain a lazy proxy reference via Spring Data JPA getReferenceById
               Student proxy = studentRepository.getReferenceById(studentId);
+
+              // Assert that the returned reference is an uninitialized Hibernate proxy
+              assertThat(proxy).isInstanceOf(org.hibernate.proxy.HibernateProxy.class);
+              assertThat(org.hibernate.Hibernate.isInitialized(proxy)).isFalse();
 
               // Verify entity-to-proxy equality in both directions
               assertThat(student).isEqualTo(proxy);
               assertThat(proxy).isEqualTo(student);
 
               // Verify consistent hash codes
-              assertThat(student.hashCode()).isEqualTo(proxy.hashCode());
-              assertThat(student.hashCode()).isEqualTo(Student.class.hashCode());
-              assertThat(proxy.hashCode()).isEqualTo(Student.class.hashCode());
+              assertThat(student).hasSameHashCodeAs(proxy);
+              assertThat(student).hasSameHashCodeAs(Student.class);
+              assertThat(proxy).hasSameHashCodeAs(Student.class);
             });
   }
 
@@ -45,9 +55,7 @@ class StudentJpaTest extends BaseIntegrationTest {
     Student transient2 = new Student("B", "b@example.com", "hash", Responsibility.STUDENT);
 
     // Transient entities without ID are never equal
-    assertThat(transient1).isNotEqualTo(transient2);
-    assertThat(transient1).isNotEqualTo(null);
-    assertThat(transient1).isNotEqualTo("some string");
+    assertThat(transient1).isNotEqualTo(transient2).isNotEqualTo(null).isNotEqualTo("some string");
 
     // Same instance is equal to itself
     assertThat(transient1).isEqualTo(transient1);
