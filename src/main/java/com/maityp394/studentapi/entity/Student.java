@@ -28,10 +28,14 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Entity
 @Table(
     name = "students",
-    uniqueConstraints = {@UniqueConstraint(name = "uk_student_email", columnNames = "email")},
+    uniqueConstraints = {
+      @UniqueConstraint(name = "uk_student_email", columnNames = "email"),
+      @UniqueConstraint(name = "uk_students_google_subject", columnNames = "google_subject")
+    },
     indexes = {
       @Index(name = "idx_students_responsibility", columnList = "responsibility"),
-      @Index(name = "idx_students_name", columnList = "name")
+      @Index(name = "idx_students_name", columnList = "name"),
+      @Index(name = "idx_students_google_subject", columnList = "google_subject")
     })
 public class Student {
 
@@ -48,9 +52,13 @@ public class Student {
   @Column(unique = true, nullable = false)
   private String email;
 
-  /** BCrypt hash of the student's password. Never stores plaintext. */
-  @Column(name = "password_hash", nullable = false)
+  /** BCrypt hash of the student's password. Nullable for accounts authenticated via OAuth2. */
+  @Column(name = "password_hash")
   private String passwordHash;
+
+  /** Google Subject identifier (subclaim) for OAuth2/OIDC linked accounts. */
+  @Column(name = "google_subject", unique = true)
+  private String googleSubject;
 
   /** The role or responsibility of the student. */
   @Enumerated(EnumType.STRING)
@@ -82,6 +90,44 @@ public class Student {
     this.email = email;
     this.passwordHash = passwordHash;
     this.responsibility = responsibility;
+  }
+
+  /**
+   * Constructs a new {@link Student} entity with Google OAuth credentials.
+   *
+   * @param name Name of the student.
+   * @param email Email of the student.
+   * @param responsibility The role or responsibility of the student.
+   * @param googleSubject Unique Google Subject identifier (subclaim).
+   */
+  public Student(String name, String email, Responsibility responsibility, String googleSubject) {
+    this.name = name;
+    this.email = email;
+    this.responsibility = responsibility;
+    this.googleSubject = googleSubject;
+  }
+
+  /**
+   * Links a Google OAuth account by setting its unique subject identifier.
+   *
+   * @param googleSubject the Google sub identifier
+   */
+  public void linkGoogleAccount(String googleSubject) {
+    this.googleSubject = googleSubject;
+  }
+
+  /** Unlinks the associated Google OAuth account. */
+  public void unlinkGoogleAccount() {
+    this.googleSubject = null;
+  }
+
+  /**
+   * Checks whether this student account is linked to a Google OAuth identity.
+   *
+   * @return {@code true} if linked to Google, {@code false} otherwise
+   */
+  public boolean isGoogleLinked() {
+    return this.googleSubject != null;
   }
 
   /**

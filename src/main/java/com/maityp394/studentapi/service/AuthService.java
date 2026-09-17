@@ -4,6 +4,7 @@ import com.maityp394.studentapi.dto.request.LoginRequest;
 import com.maityp394.studentapi.dto.request.RegisterRequest;
 import com.maityp394.studentapi.dto.response.AuthResult;
 import com.maityp394.studentapi.dto.response.StudentResponse;
+import com.maityp394.studentapi.entity.Student;
 import com.maityp394.studentapi.security.token.AuthTokens;
 import java.util.UUID;
 
@@ -65,4 +66,15 @@ public interface AuthService {
    * @return the student profile response
    */
   StudentResponse getCurrentUser(UUID studentId);
+
+  /**
+   * Processes an authenticated Google OAuth2/OIDC identity, finding an existing account, linking if
+   * permitted, or provisioning a new student record.
+   *
+   * @param googleSubject unique Google Subject identifier (subclaim)
+   * @param email verified email address from Google
+   * @param name full display name from Google
+   * @return the resolved or provisioned {@link Student} entity
+   */
+  Student processGoogleUser(String googleSubject, String email, String name);
 }

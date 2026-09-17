@@ -1,6 +1,7 @@
 package com.maityp394.studentapi.security.session;
 
 import com.maityp394.studentapi.config.properties.RedisSessionProperties;
+import com.maityp394.studentapi.security.oauth2.OAuth2AuthorizationRequestDto;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
+import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
 
@@ -23,25 +25,12 @@ public class RedisSessionService {
 
   private static final String SESSION_KEY_PREFIX = "session:";
   private static final String USER_SESSIONS_PREFIX = "user_sessions:";
+  private static final String OAUTH2_REQUEST_PREFIX = "oauth2:req:";
 
   private final StringRedisTemplate redisTemplate;
   private final ObjectMapper objectMapper;
   private final RedisSessionProperties sessionProperties;
   private final RedisScript<Long> rotateRefreshTokenScript;
-
-  /**
-   * Creates and stores a new user session in Redis with an auto-generated session ID.
-   *
-   * @param userId UUID of the authenticated student
-   * @param refreshTokenHash hex-encoded SHA-256 hash of the initial refresh token
-   * @param userAgent client User-Agent header value
-   * @param ipAddress client IP address
-   * @return newly created {@link UserSession}
-   */
-  public UserSession createSession(
-      UUID userId, String refreshTokenHash, String userAgent, String ipAddress) {
-    return createSession(UUID.randomUUID(), userId, refreshTokenHash, userAgent, ipAddress);
-  }
 
   /**
    * Creates and stores a new user session with a specified sessionId.
@@ -221,5 +210,75 @@ public class RedisSessionService {
     long secondsUntilAbsoluteExpiry =
         Math.max(1, Duration.between(now, absoluteExpiresAt).getSeconds());
     return Math.min(idleSeconds, secondsUntilAbsoluteExpiry);
+  }
+
+  /**
+   * Stores an OAuth2 authorization request in Redis with a configured TTL.
+   *
+   * @param state the OAuth2 state parameter identifying the authorization flow
+   * @param request the authorization request to store
+   * @param ttl the duration to retain the authorization state
+   */
+  public void saveOAuth2Request(String state, OAuth2AuthorizationRequest request, Duration ttl) {
+    if (state == null || request == null) {
+      return;
+    }
+    try {
+      OAuth2AuthorizationRequestDto dto = OAuth2AuthorizationRequestDto.from(request);
+      String json = objectMapper.writeValueAsString(dto);
+      redisTemplate.opsForValue().set(OAUTH2_REQUEST_PREFIX + state, json, ttl);
+      log.debug("Saved OAuth2 authorization request for state: {}", state);
+    } catch (Exception e) {
+      log.error("Failed to serialize OAuth2AuthorizationRequest for state: {}", state, e);
+    }
+  }
+
+  /**
+   * Retrieves an OAuth2 authorization request from Redis by state parameter.
+   *
+   * @param state the OAuth2 state parameter
+   * @return the deserialized {@link OAuth2AuthorizationRequest}, or null if absent or unreadable
+   */
+  public OAuth2AuthorizationRequest getOAuth2Request(String state) {
+    if (state == null || state.isBlank()) {
+      return null;
+    }
+    String json = redisTemplate.opsForValue().get(OAUTH2_REQUEST_PREFIX + state);
+    if (json == null) {
+      return null;
+    }
+    try {
+      OAuth2AuthorizationRequestDto dto =
+          objectMapper.readValue(json, OAuth2AuthorizationRequestDto.class);
+      return dto != null ? dto.toOAuth2AuthorizationRequest() : null;
+    } catch (Exception e) {
+      log.error("Failed to deserialize OAuth2AuthorizationRequest for state: {}", state, e);
+      return null;
+    }
+  }
+
+  /**
+   * Atomically retrieves and removes an OAuth2 authorization request from Redis after verification.
+   *
+   * @param state the OAuth2 state parameter to remove
+   * @return the deserialized {@link OAuth2AuthorizationRequest}, or null if absent or unreadable
+   */
+  public OAuth2AuthorizationRequest removeOAuth2Request(String state) {
+    if (state == null || state.isBlank()) {
+      return null;
+    }
+    String json = redisTemplate.opsForValue().getAndDelete(OAUTH2_REQUEST_PREFIX + state);
+    if (json == null) {
+      return null;
+    }
+    log.debug("Atomically retrieved and removed OAuth2 authorization request for state: {}", state);
+    try {
+      OAuth2AuthorizationRequestDto dto =
+          objectMapper.readValue(json, OAuth2AuthorizationRequestDto.class);
+      return dto != null ? dto.toOAuth2AuthorizationRequest() : null;
+    } catch (Exception e) {
+      log.error("Failed to deserialize OAuth2AuthorizationRequest for state: {}", state, e);
+      return null;
+    }
   }
 }

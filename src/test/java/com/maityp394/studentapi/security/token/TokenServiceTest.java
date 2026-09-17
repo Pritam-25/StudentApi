@@ -39,7 +39,7 @@ class TokenServiceTest {
   void setUp() {
     jwtService = mock(JwtService.class);
     redisSessionService = mock(RedisSessionService.class);
-    sessionProperties = new RedisSessionProperties(604800L, 2592000L);
+    sessionProperties = new RedisSessionProperties(604800L, 2592000L, 300L);
     studentRepository = mock(StudentRepository.class);
 
     tokenService =

@@ -4,6 +4,10 @@ import com.maityp394.studentapi.security.csrf.CsrfCookieFilter;
 import com.maityp394.studentapi.security.csrf.SpaCsrfTokenRequestHandler;
 import com.maityp394.studentapi.security.handler.RestAccessDeniedHandler;
 import com.maityp394.studentapi.security.handler.RestAuthenticationEntryPoint;
+import com.maityp394.studentapi.security.oauth2.CustomOidcUserService;
+import com.maityp394.studentapi.security.oauth2.OAuth2AuthenticationFailureHandler;
+import com.maityp394.studentapi.security.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.maityp394.studentapi.security.oauth2.RedisOAuth2AuthorizationRequestRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -50,6 +54,10 @@ public class SecurityConfig {
 
   private final RestAuthenticationEntryPoint authenticationEntryPoint;
   private final RestAccessDeniedHandler accessDeniedHandler;
+  private final CustomOidcUserService customOidcUserService;
+  private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+  private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
+  private final RedisOAuth2AuthorizationRequestRepository redisAuthorizationRequestRepository;
 
   private static RequestMatcher path(String pattern) {
     return PathPatternRequestMatcher.pathPattern(pattern);
@@ -67,7 +75,9 @@ public class SecurityConfig {
           path("/actuator/info"),
           path("/api/v1/auth/login"),
           path("/api/v1/auth/register"),
-          path("/api/v1/auth/refresh"));
+          path("/api/v1/auth/refresh"),
+          path("/oauth2/authorization/**"),
+          path("/login/oauth2/code/**"));
 
   private static final RequestMatcher OPENAPI_DOCS_PATHS =
       new OrRequestMatcher(path("/scalar/**"), path("/v3/api-docs/**"), path("/v3/api-docs.yaml"));
@@ -118,6 +128,18 @@ public class SecurityConfig {
                     .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter))
                     .authenticationEntryPoint(authenticationEntryPoint)
                     .accessDeniedHandler(accessDeniedHandler))
+        .oauth2Login(
+            oauth2 ->
+                oauth2
+                    .authorizationEndpoint(
+                        auth ->
+                            auth.baseUri("/oauth2/authorization")
+                                .authorizationRequestRepository(
+                                    redisAuthorizationRequestRepository))
+                    .redirectionEndpoint(redirect -> redirect.baseUri("/login/oauth2/code/*"))
+                    .userInfoEndpoint(userInfo -> userInfo.oidcUserService(customOidcUserService))
+                    .successHandler(oAuth2AuthenticationSuccessHandler)
+                    .failureHandler(oAuth2AuthenticationFailureHandler))
         .exceptionHandling(
             exceptions ->
                 exceptions

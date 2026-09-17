@@ -10,6 +10,8 @@ import org.springframework.validation.annotation.Validated;
  *
  * @param idleTimeoutSeconds Sliding session inactivity timeout in seconds (default 7 days: 604800)
  * @param absoluteLifetimeSeconds Maximum session lifetime in seconds (default 30 days: 2592000)
+ * @param oauthStateTtlSeconds Time-to-live for OAuth2 authorization request state in seconds
+ *     (default 300)
  */
 @ConfigurationProperties(prefix = "app.security.session")
 @Validated
@@ -18,4 +20,6 @@ public record RedisSessionProperties(
         long idleTimeoutSeconds,
     @Min(value = 60, message = "Absolute lifetime must be at least 60 seconds")
         @DefaultValue("2592000")
-        long absoluteLifetimeSeconds) {}
+        long absoluteLifetimeSeconds,
+    @Min(value = 30, message = "OAuth state TTL must be at least 30 seconds") @DefaultValue("300")
+        long oauthStateTtlSeconds) {}

@@ -4,9 +4,11 @@ import com.maityp394.studentapi.dto.request.LoginRequest;
 import com.maityp394.studentapi.dto.request.RegisterRequest;
 import com.maityp394.studentapi.dto.response.AuthResult;
 import com.maityp394.studentapi.dto.response.StudentResponse;
+import com.maityp394.studentapi.entity.Responsibility;
 import com.maityp394.studentapi.entity.Student;
 import com.maityp394.studentapi.exception.DuplicateResourceException;
 import com.maityp394.studentapi.exception.ErrorCode;
+import com.maityp394.studentapi.exception.OAuthAccountLinkingException;
 import com.maityp394.studentapi.exception.ResourceNotFoundException;
 import com.maityp394.studentapi.mapper.StudentMapper;
 import com.maityp394.studentapi.repository.StudentRepository;
@@ -17,6 +19,7 @@ import com.maityp394.studentapi.security.token.TokenService;
 import com.maityp394.studentapi.security.user.StudentPrincipal;
 import com.maityp394.studentapi.service.AuthService;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -119,5 +122,42 @@ public class AuthServiceImpl implements AuthService {
 
     log.info("Current student fetched successfully: id={}", studentId);
     return studentMapper.toResponse(student);
+  }
+
+  /** {@inheritDoc} */
+  @Override
+  @Transactional
+  public Student processGoogleUser(String googleSubject, String email, String name) {
+    Optional<Student> studentBySub = studentRepository.findByGoogleSubject(googleSubject);
+    if (studentBySub.isPresent()) {
+      Student student = studentBySub.get();
+      log.debug("Found existing student by googleSubject: id={}", student.getId());
+      return student;
+    }
+
+    Optional<Student> studentByEmail = studentRepository.findByEmail(email);
+    if (studentByEmail.isPresent()) {
+      Student student = studentByEmail.get();
+      if (student.getPasswordHash() != null && !student.getPasswordHash().isBlank()) {
+        log.warn("OAuth linking required for existing password account: email={}", email);
+        throw new OAuthAccountLinkingException(
+            "An account with this email already exists. Please login with your password to link your Google account.");
+      }
+
+      student.linkGoogleAccount(googleSubject);
+      Student saved = studentRepository.save(student);
+      log.info("Linked Google account to existing student: id={}", saved.getId());
+      return saved;
+    }
+
+    String displayName = (name != null && !name.isBlank()) ? name : email.split("@")[0];
+    if (displayName.length() > 50) {
+      displayName = displayName.substring(0, 50);
+    }
+
+    Student newStudent = new Student(displayName, email, Responsibility.STUDENT, googleSubject);
+    Student saved = studentRepository.save(newStudent);
+    log.info("Provisioned new student via Google OAuth: id={}, email={}", saved.getId(), email);
+    return saved;
   }
 }

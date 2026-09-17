@@ -44,7 +44,7 @@ class RedisSessionServiceTest {
     valueOperations = mock(ValueOperations.class);
     setOperations = mock(SetOperations.class);
     objectMapper = new ObjectMapper();
-    sessionProperties = new RedisSessionProperties(604800L, 2592000L);
+    sessionProperties = new RedisSessionProperties(604800L, 2592000L, 300L);
 
     when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     when(redisTemplate.opsForSet()).thenReturn(setOperations);
@@ -74,8 +74,7 @@ class RedisSessionServiceTest {
     assertThat(created.getSessionId()).isEqualTo(newSessionId);
 
     // Verify pruning of expired session
-    verify(setOperations)
-        .remove(eq(userKey), (Object[]) eq(new String[] {expiredSessionId.toString()}));
+    verify(setOperations).remove(userKey, (Object[]) new String[] {expiredSessionId.toString()});
 
     // Verify adding new session
     verify(setOperations).add(userKey, newSessionId.toString());

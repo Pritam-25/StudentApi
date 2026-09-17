@@ -31,7 +31,8 @@ public enum ErrorCode {
   INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "Unauthorized"),
   REFRESH_TOKEN_REUSE_DETECTED(HttpStatus.UNAUTHORIZED, "Refresh Token Reuse Detected"),
   FORBIDDEN(HttpStatus.FORBIDDEN, "Forbidden"),
-  CSRF_INVALID(HttpStatus.FORBIDDEN, "Forbidden");
+  CSRF_INVALID(HttpStatus.FORBIDDEN, "Forbidden"),
+  OAUTH_ACCOUNT_LINK_REQUIRED(HttpStatus.CONFLICT, "OAuth Account Linking Required");
 
   private final HttpStatus status;
   private final String title;

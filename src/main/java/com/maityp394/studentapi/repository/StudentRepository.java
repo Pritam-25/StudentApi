@@ -22,6 +22,14 @@ public interface StudentRepository extends JpaRepository<Student, UUID> {
   Optional<Student> findByEmail(String email);
 
   /**
+   * Retrieves a student entity by their unique Google Subject identifier.
+   *
+   * @param googleSubject the unique Google subclaim
+   * @return an {@link Optional} containing the matched {@link Student}, or empty if not found
+   */
+  Optional<Student> findByGoogleSubject(String googleSubject);
+
+  /**
    * Checks whether a student record with the given email address already exists.
    *
    * @param email the email address to verify

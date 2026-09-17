@@ -44,18 +44,6 @@ public final class SecurityConstants {
   }
 
   /**
-   * Checks whether the given request contains a {@code refresh_token} cookie with a non-blank
-   * value.
-   *
-   * @param request the incoming HTTP request
-   * @return {@code true} if a valid, non-blank refresh token cookie is present, otherwise {@code
-   *     false}
-   */
-  public static boolean hasRefreshTokenCookie(HttpServletRequest request) {
-    return getRefreshTokenFromCookie(request) != null;
-  }
-
-  /**
    * Extracts the refresh token string from the {@code refresh_token} cookie, if present.
    *
    * @param request the incoming HTTP request
