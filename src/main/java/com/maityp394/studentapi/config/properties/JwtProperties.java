@@ -12,14 +12,16 @@ import org.springframework.validation.annotation.Validated;
  *
  * @param issuer the JWT token issuer identifier
  * @param secret the HMAC secret string (must be at least 32 characters)
- * @param expirationMs the access token time-to-live in milliseconds (at least 1000 ms)
+ * @param expirationMs the access token time-to-live in milliseconds (default 15 minutes: 900000 ms)
  */
 @ConfigurationProperties(prefix = "jwt")
 @Validated
 public record JwtProperties(
     @NotBlank(message = "JWT issuer must not be blank") @DefaultValue("api.maityp394.live")
         String issuer,
-    @NotBlank(message = "JWT secret must not be blank") @Size(min = 32, message = "JWT secret must be at least 32 characters") String secret,
+    @NotBlank(message = "JWT secret must not be blank")
+        @Size(min = 32, message = "JWT secret must be at least 32 characters")
+        String secret,
     @Min(value = 1000, message = "JWT expiration must be at least 1000 ms (1 second)")
         @DefaultValue("900000")
         long expirationMs) {}

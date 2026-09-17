@@ -1,0 +1,14 @@
+$kind: collection
+description: |-
+  Production-grade Student Management REST API with JWT and cookie authentication.
+
+  Contact Support:
+   Name: Pritam Maity
+variables:
+  baseUrl: http://localhost:8000
+auth:
+  - id: d289e1c3-bd78-4262-9c1d-70f54e4cbf10
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{bearerToken}}"

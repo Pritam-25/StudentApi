@@ -103,8 +103,7 @@ public class HttpHighlightConverter extends CompositeConverter<ILoggingEvent> {
 
   private AnsiColor methodFg(String method) {
     return switch (method) {
-      case "POST" -> AnsiColor.BLACK;
-      case "PUT" -> AnsiColor.BLACK;
+      case "POST", "PUT" -> AnsiColor.BLACK;
       default -> AnsiColor.BRIGHT_WHITE;
     };
   }

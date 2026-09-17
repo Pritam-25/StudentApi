@@ -1,0 +1,3 @@
+$kind: collection
+description: Student resource CRUD and responsibility management endpoints
+order: 1000

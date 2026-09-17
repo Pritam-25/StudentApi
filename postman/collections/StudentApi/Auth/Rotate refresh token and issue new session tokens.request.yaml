@@ -1,0 +1,14 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/auth/refresh"
+method: POST
+headers:
+  Accept: "*/*"
+body:
+  type: text
+  content: ""
+auth:
+  type: noauth
+settings: {}
+examples: ./.resources/Rotate refresh token and issue new session tokens.resources/examples
+order: 2000

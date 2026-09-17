@@ -1,4 +1,7 @@
 #!/bin/sh
+echo "Checking Javadoc with Checkstyle..."
+./mvnw checkstyle:check || exit 1
+
 echo "Applying Spotless formatting..."
 ./mvnw spotless:apply
 

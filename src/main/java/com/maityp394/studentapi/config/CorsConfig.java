@@ -2,6 +2,7 @@ package com.maityp394.studentapi.config;
 
 import com.maityp394.studentapi.config.properties.SecurityProperties;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -11,18 +12,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /** CORS configuration for cross-origin frontend requests. */
 @Configuration
+@RequiredArgsConstructor
 public class CorsConfig {
 
   private final SecurityProperties securityProperties;
-
-  /**
-   * Constructs the CORS configuration with injected security properties.
-   *
-   * @param securityProperties externalized security properties containing allowed origins
-   */
-  public CorsConfig(SecurityProperties securityProperties) {
-    this.securityProperties = securityProperties;
-  }
 
   /**
    * Creates and registers the global {@link CorsConfigurationSource} bean.

@@ -1,0 +1,76 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/students?responsibility=CLASS_REPRESENTATIVE&page=0&size=5&sort=name,ASC"
+method: GET
+headers:
+  Accept: "*/*"
+queryParams:
+  - key: responsibility
+    value: CLASS_REPRESENTATIVE
+    disabled: false
+    description: ""
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "string",
+            "enum": [
+              "STUDENT",
+              "CLASS_REPRESENTATIVE"
+            ]
+          }
+        }
+      }
+  - key: page
+    value: "0"
+    disabled: false
+    description: Zero-based page index (0..N)
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "default": 0,
+            "minimum": 0
+          }
+        }
+      }
+  - key: size
+    value: "5"
+    disabled: false
+    description: The size of the page to be returned
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "default": 5,
+            "minimum": 1
+          }
+        }
+      }
+  - key: sort
+    value: name,ASC
+    disabled: false
+    description: "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported."
+    $type: |-
+      {
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "array",
+            "default": [
+              "name,ASC"
+            ]
+          }
+        }
+      }
+body:
+  type: text
+  content: ""
+settings: {}
+examples: ./.resources/Get paginated list of students (Class Representative only).resources/examples
+order: 6000

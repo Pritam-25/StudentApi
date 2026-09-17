@@ -2,9 +2,9 @@ package com.maityp394.studentapi.service;
 
 import com.maityp394.studentapi.dto.request.PatchStudentRequest;
 import com.maityp394.studentapi.dto.request.UpdateStudentRequest;
+import com.maityp394.studentapi.dto.response.PageResponse;
 import com.maityp394.studentapi.dto.response.StudentResponse;
 import com.maityp394.studentapi.entity.Responsibility;
-import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 
@@ -26,9 +26,9 @@ public interface StudentService {
    *
    * @param responsibility optional responsibility filter (if null, returns all students)
    * @param pageable pagination and sorting parameters
-   * @return a list of {@link StudentResponse} items for the requested page
+   * @return a {@link PageResponse} containing the paginated student records and metadata
    */
-  List<StudentResponse> getAllStudents(Responsibility responsibility, Pageable pageable);
+  PageResponse<StudentResponse> getAllStudents(Responsibility responsibility, Pageable pageable);
 
   /**
    * Fully replaces an existing student's details.

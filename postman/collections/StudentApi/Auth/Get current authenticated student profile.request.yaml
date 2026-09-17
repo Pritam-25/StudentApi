@@ -1,0 +1,34 @@
+$kind: http-request
+description: ""
+url: "{{baseUrl}}/api/v1/auth/me"
+method: GET
+headers:
+  Accept: "*/*"
+body:
+  type: text
+  content: ""
+scripts:
+  - type: afterResponse
+    code: "const xsrfCookie = pm.cookies.get(\"XSRF-TOKEN\");\r
+
+      if (xsrfCookie) {\r
+
+      \    pm.environment.set(\"xsrf_token\", xsrfCookie);\r
+
+      }\r
+
+      \r
+
+      const responseBody = pm.response.json();\r
+
+      const studentId = responseBody.data && responseBody.data.id;\r
+
+      if (studentId) {\r
+
+      \    pm.environment.set(\"id\", studentId);\r
+
+      }"
+    language: text/javascript
+settings: {}
+examples: ./.resources/Get current authenticated student profile.resources/examples
+order: 6000

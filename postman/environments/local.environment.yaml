@@ -1,0 +1,20 @@
+name: Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:8000'
+    description: Local development server
+  - key: accessToken
+    value: ''
+    description: JWT access token (set after login)
+  - key: refreshToken
+    value: ''
+    description: JWT refresh token (set after login)
+  - key: studentId
+    value: ''
+    description: Student UUID for path variable requests
+  - key: bearerToken
+    value: ''
+  - key: xsrf_token
+    value: ''
+  - key: id
+    value: ''

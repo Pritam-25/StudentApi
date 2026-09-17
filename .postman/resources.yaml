@@ -1,0 +1,11 @@
+workspace:
+  id: 12de1bc5-f729-4b4a-bc65-dc42cedfe4a6
+
+localResources:
+  specs:
+    - ../postman/specs/api-docs.yaml
+    - ../api-docs.yaml
+resourceNameMappings:
+  specs:
+    - ../postman/specs/api-docs.yaml: api-docs.yaml
+    - ../api-docs.yaml: api-docs.yaml
